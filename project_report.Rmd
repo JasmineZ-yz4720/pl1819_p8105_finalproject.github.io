@@ -1,0 +1,17 @@
+---
+title: "Project Report: Performance Analysis of Premier League 2018-19"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+# Introduction
+
+# Data Sources
+
+# Data Manipulatio 
+
+# Exploratory Analysis 
+
+# Regression Analysis 
