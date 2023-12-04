@@ -3,15 +3,135 @@ title: "Project Report: Performance Analysis of Premier League 2018-19"
 output: 
   html_document:
     toc: true
-    toc_float: true
+    toc_float: true 
+    theme: cosmo
 ---
 
-# Introduction
+## Introduction
 
-# Data Sources
+As the most popular football league worldwide, the Premier League consists of 20 competitive football clubs in England and attracts some of the most talented football players. Statistical inference is commonly used as part of sporting analysis to help the clubs to achieve better game performance. Data scientists can use past data to build models and predict future performance. For our final project, we set our interest on the Premier League season 2018/19 because it was the season before pandemic and data availability. In this report, we explore the factors with significant effect on the goal difference (number of goals scored minus goals conceded) for each team by the end of the season. We hypothesize that the player's average age, proportion of non-european players, possession rate, passing accuracy, number of yellow/red cards received, and money spent in the transfer window are deciding factors based on our data exploration process and existing scientific studies.  	
 
-# Data Manipulatio 
 
-# Exploratory Analysis 
+## Data Sources
 
-# Regression Analysis 
+## Data Manipulation 
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(readxl)
+library(plotly)
+```
+
+```{r message=FALSE, warning=FALSE}
+match_df = read_csv("./data/match_data.csv")|> 
+  janitor::clean_names()
+transfer_df = read_csv("./data/transfer.csv")|> 
+  janitor::clean_names() 
+
+player_df = read_excel("./data/player_game.xlsx", sheet = 1) |> 
+  janitor::clean_names()|>
+  rename(team = squad)
+player_df$team = gsub("Manchester Utd", "Manchester United", player_df$team)
+player_df$team = gsub("Newcastle Utd", "Newcastle", player_df$team)
+player_df$team = gsub("Wolves", "Wolverhampton", player_df$team)
+player_df$team = gsub("Cardiff City", "Cardiff", player_df$team)
+player_df$team = gsub("Leicester City", "Leicester", player_df$team)
+
+country_code_df = read.csv("./data/country_codes.csv") |> 
+  janitor::clean_names() |> 
+  rename(country = fifa) 
+```
+
+
+```{r message=FALSE, warning=FALSE}
+age_player_df = player_df  |> 
+ mutate(age = as.numeric(as.character(age)),
+ min = as.numeric(as.character(min)))  |> 
+ na.omit()
+
+q25 <- quantile(age_player_df$age, 0.25)
+q75 <- quantile(age_player_df$age, 0.75)
+
+proportion_age_23_29 <- age_player_df  |> 
+  group_by(team) |>                        # Group by squad
+  summarise(
+    total = n(),                            # Calculate the total number of players in each squad
+    count_23_29 = sum(age >= 23 & age <= 29) # Count the number of players aged between 23 and 29
+  )  |> 
+  mutate(proportion = count_23_29 / total)
+
+match_df <- match_df  |> 
+  left_join(proportion_age_23_29, by = "team")  |> 
+  select(-total, -count_23_29)  |> 
+  rename(ave_age_proportion=proportion)
+```
+
+
+```{r message=FALSE, warning=FALSE}
+GBR_df = country_code_df |> 
+  filter(country == "ENG,NIR,SCO,WAL") 
+GBR_df = data.frame(country = unlist(strsplit(as.character(GBR_df$country), ",")),
+                    official_name_en = GBR_df$official_name_en,
+                    region_name = GBR_df$region_name)
+country_code_df = country_code_df |> 
+  select(country, official_name_en, region_name) |> 
+  bind_rows(GBR_df)
+
+player_dist = player_df |>
+  separate(nation, into = c("country_abbre", "country"), convert = TRUE) |> 
+  select(country, player, team) |> 
+  left_join(x = _, y = country_code_df) |> 
+  drop_na()
+```
+
+
+```{r message=FALSE, warning=FALSE}
+player_region = player_dist |>
+  group_by(team) |>                       
+  summarise(
+    total = n()) 
+player_europe = player_dist |>
+  filter(region_name == "Europe") |> 
+  group_by(team) |>                       
+  summarise(
+    n_europe = n()) |> 
+  left_join(x = _, y = player_region) |> 
+  mutate(proportion = n_europe/total)
+
+match_df <- match_df  |> 
+  left_join(player_europe, by = "team")  |> 
+  select(-total, -n_europe)  |> 
+  rename(europe_player_proportion = proportion)
+```
+
+
+```{r message=FALSE, warning=FALSE}
+transfer_df$team <- factor(transfer_df$team, levels = unique(transfer_df$team), 
+                           labels = c("Manchester City", "Manchester United", "Tottenham","Liverpool", "Chelsea", "Arsenal", "Burnley", "Everton", "Leicester", "Newcastle", "Crystal Palace", "Bournemouth", "West Ham", "Watford", "Brighton", "Huddersfield", "Southampton", "Wolverhampton", "Cardiff", "Fulham"))
+```
+
+```{r message=FALSE, warning=FALSE}
+match_df <- merge(match_df, transfer_df, by = "team")
+match_df <- match_df[order(match_df$general_league_position), ] 
+```
+
+```{r message=FALSE, warning=FALSE}
+match_df |> 
+  mutate(ave_age_proportion = ave_age_proportion*100,
+         europe_player_proportion = europe_player_proportion*100,
+         card = (general_card_yellow+general_card_red),
+         total = -total,
+         goal_accurary = 100*attack_shots_on_target/attack_shots) |> 
+  select(general_goal_difference, general_points, general_squad_average_age, ave_age_proportion, europe_player_proportion,
+         attack_posession, attack_pass_accuracy, general_card_yellow, total, defence_saves)|> 
+  lm(general_goal_difference ~ general_squad_average_age + ave_age_proportion + europe_player_proportion
+     + attack_posession + attack_pass_accuracy + general_card_yellow + total + defence_saves, data = _ ) |> 
+  summary()
+```
+
+
+
+
+## Exploratory Analysis 
+
+## Regression Analysis 

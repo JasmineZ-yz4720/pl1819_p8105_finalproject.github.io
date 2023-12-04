@@ -3,8 +3,12 @@ output_dir: "."
 navbar:
   title: "Home"
   right:
-    - text: "About"
-      href: about.html
+    - text: "Data Sources"
+      href: data_source.html
+    - text: "Exploratory Analysis"
+      href: analysis.html
+    - text: "Regression"
+      href: regression.html
     - text: "Project Report"
       href: project_report.html
     - icon: fa-envelope fa-lg
@@ -13,4 +17,4 @@ navbar:
       href: https://github.com/JasmineZ-yz4720/pl1819_p8105_finalproject.github.io.git
 output:
   html_document:
-    theme: cerulean
+    theme: cosmo

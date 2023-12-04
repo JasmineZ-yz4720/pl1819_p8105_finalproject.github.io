@@ -3,8 +3,9 @@ title: "Premier League 2018-19 Performance Analysis"
 output: 
   html_document:
     toc: true
-    toc_float: true
-    theme: cerulean
+    toc_float: false
+    theme: lumen
 ---
 
+![](pics/mancity_win.jpg)
 
