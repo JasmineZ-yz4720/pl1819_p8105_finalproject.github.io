@@ -11,7 +11,7 @@
 
 
 
-<title>Project Report: Performance Analysis of Premier League 2018-19</title>
+<title>About Our Project</title>
 
 <script src="site_libs/header-attrs-2.24/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
@@ -358,157 +358,67 @@ div.tocify {
 
 
 
-<h1 class="title toc-ignore">Project Report: Performance Analysis of
-Premier League 2018-19</h1>
+<h1 class="title toc-ignore">About Our Project</h1>
 
 </div>
 
 
-<div id="introduction" class="section level2">
-<h2>Introduction</h2>
+<p><img src="pics/pl_logo.jpeg" style="width:30.0%" align="right" /></p>
+<div id="premier-league" class="section level1">
+<h1>Premier League</h1>
 <p>As the most popular football league worldwide, the Premier League
 consists of 20 competitive football clubs in England and attracts some
-of the most talented football players. Statistical inference is commonly
-used as part of sporting analysis to help the clubs to achieve better
-game performance. Data scientists can use past data to build models and
-predict future performance. For our final project, we set our interest
-on the Premier League season 2018/19 because it was the season before
-pandemic and data availability. In this report, we explore the factors
-with significant effect on the goal difference (number of goals scored
-minus goals conceded) for each team by the end of the season. We
-hypothesize that the player’s average age, proportion of non-european
-players, possession rate, passing accuracy, number of yellow/red cards
-received, and money spent in the transfer window are deciding factors
-based on our data exploration process and existing scientific
+of the most talented football players. Each season lasts from August to
+June, with each team playing 38 matches against all other teams (home
+and away). Final standings is determined by points earned throughout the
+season, with 3 points for each win, 1 point for each draw, and 0 point
+for each loss.</p>
+</div>
+<div id="motivation" class="section level1">
+<h1>Motivation</h1>
+<p>Statistical inference is commonly used as part of sporting analysis
+to help the clubs to achieve better game performance. Data scientists
+can use past data to build models and predict future performance.<br />
+For our final project, we focused on the Premier League season 2018/19
+because it was the season before pandemic and data availability. We are
+interested in the factors with significant effect on the goal difference
+(number of goals scored minus goals conceded) for each team by the end
+of the season so that we might be able to predict team performance for
+future seasons. Factors including the player’s average age, proportion
+of non-european players, possession rate, passing accuracy, number of
+yellow cards received, and money spent in the transfer window are being
+explored based on our data exploration process and existing scientific
 studies.</p>
 </div>
-<div id="data-sources" class="section level2">
-<h2>Data Sources</h2>
+<div id="related-work" class="section level1">
+<h1>Related Work</h1>
+<p>As a high performance sports, thousands of scientific studies have
+been conducted to show the deciding effects of some variables on sport
+performance.</p>
+<p>One <a href="https://pubmed.ncbi.nlm.nih.gov/21604225/">article</a>
+examined age and team ranking and player performance and found a
+significant correlation between the relative age effect and success as
+defined by team performance and final ranking.</p>
+<p>Tactic can never be underestimated in a group sport. Since the 1996
+European Cup, technical football, represented by the French team, has
+occupied the mainstream of world football in the past two European
+Championships and World Cups. Technical and tactical techniques and
+tactics are also different, which affects the results of the game at a
+high level. The <a
+href="https://www.researchgate.net/publication/315562890_Analysis_on_the_Effect_of_Attack_Skills_and_Tactics_on_Football_Matches_Scoring_Efficiency">article</a>
+proves the significant impact of passing rate and ball possession rate
+on the outcome of the game.</p>
+<p>As modern football develops, the role of financial supports gets much
+more important compared to the past. Football clubs can spend hundreds
+of millions of Euros to trade players during the transfer window. In
+this <a
+href="https://scholarcommons.sc.edu/cgi/viewcontent.cgi?article=1518&amp;context=senior_theses">study</a>,
+the authors consider the impact of Financial Fair Play regulations and
+team ROI and focus on case studies of Manchester City, Chelsea,
+Leicester City and Newcastle United.</p>
 </div>
-<div id="data-manipulation" class="section level2">
-<h2>Data Manipulation</h2>
-<pre class="r"><code>match_df = read_csv(&quot;./data/match_data.csv&quot;)|&gt; 
-  janitor::clean_names()
-transfer_df = read_csv(&quot;./data/transfer.csv&quot;)|&gt; 
-  janitor::clean_names() 
-
-player_df = read_excel(&quot;./data/player_game.xlsx&quot;, sheet = 1) |&gt; 
-  janitor::clean_names()|&gt;
-  rename(team = squad)
-player_df$team = gsub(&quot;Manchester Utd&quot;, &quot;Manchester United&quot;, player_df$team)
-player_df$team = gsub(&quot;Newcastle Utd&quot;, &quot;Newcastle&quot;, player_df$team)
-player_df$team = gsub(&quot;Wolves&quot;, &quot;Wolverhampton&quot;, player_df$team)
-player_df$team = gsub(&quot;Cardiff City&quot;, &quot;Cardiff&quot;, player_df$team)
-player_df$team = gsub(&quot;Leicester City&quot;, &quot;Leicester&quot;, player_df$team)
-
-country_code_df = read.csv(&quot;./data/country_codes.csv&quot;) |&gt; 
-  janitor::clean_names() |&gt; 
-  rename(country = fifa) </code></pre>
-<pre class="r"><code>age_player_df = player_df  |&gt; 
- mutate(age = as.numeric(as.character(age)),
- min = as.numeric(as.character(min)))  |&gt; 
- na.omit()
-
-q25 &lt;- quantile(age_player_df$age, 0.25)
-q75 &lt;- quantile(age_player_df$age, 0.75)
-
-proportion_age_23_29 &lt;- age_player_df  |&gt; 
-  group_by(team) |&gt;                        # Group by squad
-  summarise(
-    total = n(),                            # Calculate the total number of players in each squad
-    count_23_29 = sum(age &gt;= 23 &amp; age &lt;= 29) # Count the number of players aged between 23 and 29
-  )  |&gt; 
-  mutate(proportion = count_23_29 / total)
-
-match_df &lt;- match_df  |&gt; 
-  left_join(proportion_age_23_29, by = &quot;team&quot;)  |&gt; 
-  select(-total, -count_23_29)  |&gt; 
-  rename(ave_age_proportion=proportion)</code></pre>
-<pre class="r"><code>GBR_df = country_code_df |&gt; 
-  filter(country == &quot;ENG,NIR,SCO,WAL&quot;) 
-GBR_df = data.frame(country = unlist(strsplit(as.character(GBR_df$country), &quot;,&quot;)),
-                    official_name_en = GBR_df$official_name_en,
-                    region_name = GBR_df$region_name)
-country_code_df = country_code_df |&gt; 
-  select(country, official_name_en, region_name) |&gt; 
-  bind_rows(GBR_df)
-
-player_dist = player_df |&gt;
-  separate(nation, into = c(&quot;country_abbre&quot;, &quot;country&quot;), convert = TRUE) |&gt; 
-  select(country, player, team) |&gt; 
-  left_join(x = _, y = country_code_df) |&gt; 
-  drop_na()</code></pre>
-<pre class="r"><code>player_region = player_dist |&gt;
-  group_by(team) |&gt;                       
-  summarise(
-    total = n()) 
-player_europe = player_dist |&gt;
-  filter(region_name == &quot;Europe&quot;) |&gt; 
-  group_by(team) |&gt;                       
-  summarise(
-    n_europe = n()) |&gt; 
-  left_join(x = _, y = player_region) |&gt; 
-  mutate(proportion = n_europe/total)
-
-match_df &lt;- match_df  |&gt; 
-  left_join(player_europe, by = &quot;team&quot;)  |&gt; 
-  select(-total, -n_europe)  |&gt; 
-  rename(europe_player_proportion = proportion)</code></pre>
-<pre class="r"><code>transfer_df$team &lt;- factor(transfer_df$team, levels = unique(transfer_df$team), 
-                           labels = c(&quot;Manchester City&quot;, &quot;Manchester United&quot;, &quot;Tottenham&quot;,&quot;Liverpool&quot;, &quot;Chelsea&quot;, &quot;Arsenal&quot;, &quot;Burnley&quot;, &quot;Everton&quot;, &quot;Leicester&quot;, &quot;Newcastle&quot;, &quot;Crystal Palace&quot;, &quot;Bournemouth&quot;, &quot;West Ham&quot;, &quot;Watford&quot;, &quot;Brighton&quot;, &quot;Huddersfield&quot;, &quot;Southampton&quot;, &quot;Wolverhampton&quot;, &quot;Cardiff&quot;, &quot;Fulham&quot;))</code></pre>
-<pre class="r"><code>match_df &lt;- merge(match_df, transfer_df, by = &quot;team&quot;)
-match_df &lt;- match_df[order(match_df$general_league_position), ] </code></pre>
-<pre class="r"><code>match_df |&gt; 
-  mutate(ave_age_proportion = ave_age_proportion*100,
-         europe_player_proportion = europe_player_proportion*100,
-         card = (general_card_yellow+general_card_red),
-         total = -total,
-         goal_accurary = 100*attack_shots_on_target/attack_shots) |&gt; 
-  select(general_goal_difference, general_points, general_squad_average_age, ave_age_proportion, europe_player_proportion,
-         attack_posession, attack_pass_accuracy, general_card_yellow, total, defence_saves)|&gt; 
-  lm(general_goal_difference ~ general_squad_average_age + ave_age_proportion + europe_player_proportion
-     + attack_posession + attack_pass_accuracy + general_card_yellow + total + defence_saves, data = _ ) |&gt; 
-  summary()</code></pre>
-<pre><code>## 
-## Call:
-## lm(formula = general_goal_difference ~ general_squad_average_age + 
-##     ave_age_proportion + europe_player_proportion + attack_posession + 
-##     attack_pass_accuracy + general_card_yellow + total + defence_saves, 
-##     data = select(mutate(match_df, ave_age_proportion = ave_age_proportion * 
-##         100, europe_player_proportion = europe_player_proportion * 
-##         100, card = (general_card_yellow + general_card_red), 
-##         total = -total, goal_accurary = 100 * attack_shots_on_target/attack_shots), 
-##         general_goal_difference, general_points, general_squad_average_age, 
-##         ave_age_proportion, europe_player_proportion, attack_posession, 
-##         attack_pass_accuracy, general_card_yellow, total, defence_saves))
-## 
-## Residuals:
-##     Min      1Q  Median      3Q     Max 
-## -29.630  -3.530   1.583   6.206  21.063 
-## 
-## Coefficients:
-##                             Estimate Std. Error t value Pr(&gt;|t|)   
-## (Intercept)               346.398764 291.778140   1.187   0.2602   
-## general_squad_average_age  -8.768815   5.735574  -1.529   0.1545   
-## ave_age_proportion         -0.115962   0.402989  -0.288   0.7789   
-## europe_player_proportion   -0.555247   0.473754  -1.172   0.2659   
-## attack_posession            7.927016   2.484598   3.190   0.0086 **
-## attack_pass_accuracy       -5.578477   2.880993  -1.936   0.0789 . 
-## general_card_yellow         0.328944   0.657231   0.500   0.6266   
-## total                       0.009323   0.024979   0.373   0.7161   
-## defence_saves              -0.348724   0.269772  -1.293   0.2226   
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
-## 
-## Residual standard error: 17.11 on 11 degrees of freedom
-## Multiple R-squared:  0.8382, Adjusted R-squared:  0.7205 
-## F-statistic: 7.123 on 8 and 11 DF,  p-value: 0.001985</code></pre>
-</div>
-<div id="exploratory-analysis" class="section level2">
-<h2>Exploratory Analysis</h2>
-</div>
-<div id="regression-analysis" class="section level2">
-<h2>Regression Analysis</h2>
+<div id="initial-questions" class="section level1">
+<h1>Initial Questions</h1>
 </div>
 
 
