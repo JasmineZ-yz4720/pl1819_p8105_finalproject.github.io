@@ -11,7 +11,7 @@
 
 
 
-<title>Regression Analysis</title>
+<title>Data Sources</title>
 
 <script src="site_libs/header-attrs-2.24/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
@@ -358,166 +358,12 @@ div.tocify {
 
 
 
-<h1 class="title toc-ignore">Regression Analysis</h1>
+<h1 class="title toc-ignore">Data Sources</h1>
 
 </div>
 
 
-<div id="linear-models" class="section level1">
-<h1>Linear Models</h1>
-<p><strong>We have tested the association between individual variables
-and the outcome. </strong></p>
-<pre class="r"><code>match_df = match_df |&gt; 
-  mutate(ave_age_proportion = ave_age_proportion*100,
-         europe_player_proportion = europe_player_proportion*100,
-         total = -total,
-         goal_accurary = 100*attack_shots_on_target/attack_shots) |&gt; 
-  select(general_goal_difference, general_points, general_squad_average_age, ave_age_proportion, europe_player_proportion,
-         attack_posession, attack_pass_accuracy, general_card_yellow, total) 
-model_full = match_df |&gt; 
-  lm(general_goal_difference ~ general_squad_average_age + ave_age_proportion + europe_player_proportion
-     + attack_posession + attack_pass_accuracy + general_card_yellow + total, data = _ ) |&gt; 
-  broom::tidy() 
-  
-knitr::kable(model_full, digits=3)</code></pre>
-<table>
-<thead>
-<tr class="header">
-<th align="left">term</th>
-<th align="right">estimate</th>
-<th align="right">std.error</th>
-<th align="right">statistic</th>
-<th align="right">p.value</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">(Intercept)</td>
-<td align="right">442.142</td>
-<td align="right">290.004</td>
-<td align="right">1.525</td>
-<td align="right">0.153</td>
-</tr>
-<tr class="even">
-<td align="left">general_squad_average_age</td>
-<td align="right">-11.017</td>
-<td align="right">5.616</td>
-<td align="right">-1.962</td>
-<td align="right">0.073</td>
-</tr>
-<tr class="odd">
-<td align="left">ave_age_proportion</td>
-<td align="right">-0.253</td>
-<td align="right">0.399</td>
-<td align="right">-0.634</td>
-<td align="right">0.538</td>
-</tr>
-<tr class="even">
-<td align="left">europe_player_proportion</td>
-<td align="right">-0.583</td>
-<td align="right">0.486</td>
-<td align="right">-1.198</td>
-<td align="right">0.254</td>
-</tr>
-<tr class="odd">
-<td align="left">attack_posession</td>
-<td align="right">8.081</td>
-<td align="right">2.550</td>
-<td align="right">3.169</td>
-<td align="right">0.008</td>
-</tr>
-<tr class="even">
-<td align="left">attack_pass_accuracy</td>
-<td align="right">-6.097</td>
-<td align="right">2.932</td>
-<td align="right">-2.080</td>
-<td align="right">0.060</td>
-</tr>
-<tr class="odd">
-<td align="left">general_card_yellow</td>
-<td align="right">-0.208</td>
-<td align="right">0.523</td>
-<td align="right">-0.398</td>
-<td align="right">0.697</td>
-</tr>
-<tr class="even">
-<td align="left">total</td>
-<td align="right">0.022</td>
-<td align="right">0.024</td>
-<td align="right">0.944</td>
-<td align="right">0.364</td>
-</tr>
-</tbody>
-</table>
-<pre class="r"><code>tactic_model = match_df |&gt; 
-  lm(general_goal_difference ~ attack_posession + attack_pass_accuracy, data = _)|&gt; 
-  broom::tidy() 
-knitr::kable(tactic_model, digits=3)</code></pre>
-<table>
-<thead>
-<tr class="header">
-<th align="left">term</th>
-<th align="right">estimate</th>
-<th align="right">std.error</th>
-<th align="right">statistic</th>
-<th align="right">p.value</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">(Intercept)</td>
-<td align="right">-92.204</td>
-<td align="right">84.367</td>
-<td align="right">-1.093</td>
-<td align="right">0.290</td>
-</tr>
-<tr class="even">
-<td align="left">attack_posession</td>
-<td align="right">7.213</td>
-<td align="right">2.067</td>
-<td align="right">3.489</td>
-<td align="right">0.003</td>
-</tr>
-<tr class="odd">
-<td align="left">attack_pass_accuracy</td>
-<td align="right">-3.427</td>
-<td align="right">2.251</td>
-<td align="right">-1.522</td>
-<td align="right">0.146</td>
-</tr>
-</tbody>
-</table>
-<pre class="r"><code>cv_df = 
-  crossv_mc(match_df, 100)
-  
-cv_df =
-  cv_df |&gt; 
-  mutate(
-    train = map(train, as_tibble),
-    test = map(test, as_tibble))
 
-cv_df = 
-  cv_df |&gt; 
-  mutate(
-    full_mod  = map(train, \(df) lm(general_goal_difference ~ general_squad_average_age + ave_age_proportion + europe_player_proportion
-     + attack_posession + attack_pass_accuracy + general_card_yellow + total, data = df )),
-    tactic_mod  = map(train, \(df)  lm(general_goal_difference ~ attack_posession + attack_pass_accuracy, data = df))
-   ) |&gt; 
-  mutate(
-    rmse_general = map2_dbl(full_mod, test, \(mod, df) rmse(model = mod, data = df)),
-    rmse_poly = map2_dbl(tactic_mod, test, \(mod, df) rmse(model = mod, data = df)))
-
-cv_df |&gt; 
-  select(starts_with(&quot;rmse&quot;)) |&gt; 
-  pivot_longer(
-    everything(),
-    names_to = &quot;model&quot;, 
-    values_to = &quot;rmse&quot;,
-    names_prefix = &quot;rmse_&quot;) |&gt; 
-  mutate(model = fct_inorder(model)) |&gt; 
-  ggplot(aes(x = model, y = rmse)) + geom_violin()</code></pre>
-<p><img src="regression_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
-</div>
 
 
 

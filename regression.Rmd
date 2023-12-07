@@ -12,6 +12,10 @@ knitr::opts_chunk$set(include = FALSE)
 library(tidyverse)
 library(readxl)
 library(plotly)
+library(mgcv)
+library(viridis)
+library(modelr)
+set.seed(1)
 ```
 
 ```{r include=FALSE}
@@ -113,17 +117,58 @@ match_df <- match_df[order(match_df$general_league_position), ]
 
 **We have tested the association between individual variables and the outcome. **
 
-```{r full model}
-model_full = match_df |> 
+```{r include=TRUE}
+match_df = match_df |> 
   mutate(ave_age_proportion = ave_age_proportion*100,
          europe_player_proportion = europe_player_proportion*100,
          total = -total,
          goal_accurary = 100*attack_shots_on_target/attack_shots) |> 
   select(general_goal_difference, general_points, general_squad_average_age, ave_age_proportion, europe_player_proportion,
-         attack_posession, attack_pass_accuracy, general_card_yellow, total)|> 
+         attack_posession, attack_pass_accuracy, general_card_yellow, total) 
+model_full = match_df |> 
   lm(general_goal_difference ~ general_squad_average_age + ave_age_proportion + europe_player_proportion
      + attack_posession + attack_pass_accuracy + general_card_yellow + total, data = _ ) |> 
   broom::tidy() 
   
 knitr::kable(model_full, digits=3)
 ```
+
+```{r include=TRUE}
+tactic_model = match_df |> 
+  lm(general_goal_difference ~ attack_posession + attack_pass_accuracy, data = _)|> 
+  broom::tidy() 
+knitr::kable(tactic_model, digits=3)
+```
+
+```{r include=TRUE}
+cv_df = 
+  crossv_mc(match_df, 100)
+  
+cv_df =
+  cv_df |> 
+  mutate(
+    train = map(train, as_tibble),
+    test = map(test, as_tibble))
+
+cv_df = 
+  cv_df |> 
+  mutate(
+    full_mod  = map(train, \(df) lm(general_goal_difference ~ general_squad_average_age + ave_age_proportion + europe_player_proportion
+     + attack_posession + attack_pass_accuracy + general_card_yellow + total, data = df )),
+    tactic_mod  = map(train, \(df)  lm(general_goal_difference ~ attack_posession + attack_pass_accuracy, data = df))
+   ) |> 
+  mutate(
+    rmse_general = map2_dbl(full_mod, test, \(mod, df) rmse(model = mod, data = df)),
+    rmse_poly = map2_dbl(tactic_mod, test, \(mod, df) rmse(model = mod, data = df)))
+
+cv_df |> 
+  select(starts_with("rmse")) |> 
+  pivot_longer(
+    everything(),
+    names_to = "model", 
+    values_to = "rmse",
+    names_prefix = "rmse_") |> 
+  mutate(model = fct_inorder(model)) |> 
+  ggplot(aes(x = model, y = rmse)) + geom_violin()
+```
+

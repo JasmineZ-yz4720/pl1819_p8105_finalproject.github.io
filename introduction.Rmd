@@ -29,3 +29,11 @@ Tactic can never be underestimated in a group sport. Since the 1996 European Cup
 As modern football develops, the role of financial supports gets much more important compared to the past. Football clubs can spend hundreds of millions of Euros to trade players during the transfer window. In this [study](https://scholarcommons.sc.edu/cgi/viewcontent.cgi?article=1518&context=senior_theses), the authors consider the impact of Financial Fair Play regulations and team ROI and focus on case studies of Manchester City, Chelsea, Leicester City and Newcastle United. 
 
 # Initial Questions
+
+* What represents a club's success?
+
+* What factors can influence the performance of a football club?
+
+* Will different match styles have significant differences in club performance?
+
+* What impact does the club's economic situation have on performance?

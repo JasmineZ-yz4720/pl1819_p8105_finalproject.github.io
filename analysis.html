@@ -33,6 +33,7 @@
 <link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
 <script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
+<script src="site_libs/navigation-1.1/codefolding.js"></script>
 <link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
 <script src="site_libs/htmlwidgets-1.6.2/htmlwidgets.js"></script>
@@ -228,6 +229,9 @@ $(document).ready(function () {
 </style>
 
 <!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
 
 
 
@@ -363,6 +367,14 @@ div.tocify {
 
 <div id="header">
 
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
 
 
 <h1 class="title toc-ignore">Exploratory Analysis</h1>
@@ -371,13 +383,43 @@ div.tocify {
 
 
 <div id="player-distribution" class="section level1">
-<h1>Player Distribution</h1>
-<div id="player-distribution-by-region" class="section level3">
-<h3>Player Distribution by Region</h3>
+<h1><strong>Player Distribution</strong></h1>
+<div id="player-distribution-by-region" class="section level2">
+<h2>Player Distribution by Region</h2>
+<pre class="r"><code>player_dist |&gt; 
+  ggplot() + geom_bar(aes(x = region_name)) +
+  labs(title = &quot;PL Players by World Region&quot;, 
+       x = &quot;Region of the World&quot;,
+       y = &quot;Count of Players&quot;)+ 
+  scale_fill_viridis_d(option = &quot;viridis&quot;)</code></pre>
+<p><img src="analysis_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
 </div>
-<div id="player-from-top7-pl-2018-19" class="section level3">
-<h3>Player from top7 PL 2018-19</h3>
+<div id="player-distribution-of-20-teams" class="section level2">
+<h2>Player Distribution of 20 Teams</h2>
+<pre class="r"><code>player_dist |&gt;
+  count(region_name, team) |&gt; 
+  plot_ly(data = _,
+        x = ~ team,
+        y = ~ n,
+        color = ~ region_name,
+        colors = &quot;Set2&quot;)  |&gt; 
+  add_markers(text = ~paste0(&#39;Football Club: &#39;, team,
+                      &#39;&lt;/br&gt;World Region: &#39;, region_name,
+                      &#39;&lt;br&gt;Number in region: &#39;, n),
+        hoverinfo = &quot;text&quot;)  |&gt; 
+  layout(showlegend = TRUE,
+         title = &quot;Player Distribution by Football Club&quot;,
+         xaxis = list(title = &quot;FC&quot;),
+         yaxis = list(title = &quot;Number of Player by World Region&quot;))</code></pre>
+<div class="plotly html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-37542a4a92fd150fd431" style="width:672px;height:480px;"></div>
+<script type="application/json" data-for="htmlwidget-37542a4a92fd150fd431">{"x":{"visdat":{"fbb3e29a82f":["function () ","plotlyVisDat"]},"cur_data":"fbb3e29a82f","attrs":{"fbb3e29a82f":{"x":{},"y":{},"color":{},"colors":"Set2","alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"scatter","mode":"markers","text":{},"hoverinfo":"text","inherit":true}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"showlegend":true,"title":"Player Distribution by Football Club","xaxis":{"domain":[0,1],"automargin":true,"title":"FC","type":"category","categoryorder":"array","categoryarray":["Arsenal","Bournemouth","Brighton","Burnley","Cardiff","Chelsea","Crystal Palace","Everton","Fulham","Huddersfield","Leicester","Liverpool","Manchester City","Manchester United","Newcastle","Southampton","Tottenham","Watford","West Ham","Wolverhampton"]},"yaxis":{"domain":[0,1],"automargin":true,"title":"Number of Player by World Region"},"hovermode":"closest"},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"data":[{"x":["Arsenal","Brighton","Cardiff","Chelsea","Crystal Palace","Everton","Fulham","Huddersfield","Leicester","Liverpool","Manchester City","Manchester United","Newcastle","Southampton","Tottenham","Watford","West Ham","Wolverhampton"],"y":[3,3,3,1,6,3,7,4,6,4,1,1,2,2,3,3,2,3],"type":"scatter","mode":"markers","text":["Football Club: Arsenal<\/br>World Region: Africa<br>Number in region: 3","Football Club: Brighton<\/br>World Region: Africa<br>Number in region: 3","Football Club: Cardiff<\/br>World Region: Africa<br>Number in region: 3","Football Club: Chelsea<\/br>World Region: Africa<br>Number in region: 1","Football Club: Crystal Palace<\/br>World Region: Africa<br>Number in region: 6","Football Club: Everton<\/br>World Region: Africa<br>Number in region: 3","Football Club: Fulham<\/br>World Region: Africa<br>Number in region: 7","Football Club: Huddersfield<\/br>World Region: Africa<br>Number in region: 4","Football Club: Leicester<\/br>World Region: Africa<br>Number in region: 6","Football Club: Liverpool<\/br>World Region: Africa<br>Number in region: 4","Football Club: Manchester City<\/br>World Region: Africa<br>Number in region: 1","Football Club: Manchester United<\/br>World Region: Africa<br>Number in region: 1","Football Club: Newcastle<\/br>World Region: Africa<br>Number in region: 2","Football Club: Southampton<\/br>World Region: Africa<br>Number in region: 2","Football Club: Tottenham<\/br>World Region: Africa<br>Number in region: 3","Football Club: Watford<\/br>World Region: Africa<br>Number in region: 3","Football Club: West Ham<\/br>World Region: Africa<br>Number in region: 2","Football Club: Wolverhampton<\/br>World Region: Africa<br>Number in region: 3"],"hoverinfo":["text","text","text","text","text","text","text","text","text","text","text","text","text","text","text","text","text","text"],"name":"Africa","marker":{"color":"rgba(102,194,165,1)","line":{"color":"rgba(102,194,165,1)"}},"textfont":{"color":"rgba(102,194,165,1)"},"error_y":{"color":"rgba(102,194,165,1)"},"error_x":{"color":"rgba(102,194,165,1)"},"line":{"color":"rgba(102,194,165,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Arsenal","Bournemouth","Brighton","Cardiff","Chelsea","Crystal Palace","Everton","Fulham","Huddersfield","Leicester","Liverpool","Manchester City","Manchester United","Newcastle","Tottenham","Watford","West Ham","Wolverhampton"],"y":[1,2,2,3,4,1,3,2,1,2,3,6,5,5,5,4,7,2],"type":"scatter","mode":"markers","text":["Football Club: Arsenal<\/br>World Region: Americas<br>Number in region: 1","Football Club: Bournemouth<\/br>World Region: Americas<br>Number in region: 2","Football Club: Brighton<\/br>World Region: Americas<br>Number in region: 2","Football Club: Cardiff<\/br>World Region: Americas<br>Number in region: 3","Football Club: Chelsea<\/br>World Region: Americas<br>Number in region: 4","Football Club: Crystal Palace<\/br>World Region: Americas<br>Number in region: 1","Football Club: Everton<\/br>World Region: Americas<br>Number in region: 3","Football Club: Fulham<\/br>World Region: Americas<br>Number in region: 2","Football Club: Huddersfield<\/br>World Region: Americas<br>Number in region: 1","Football Club: Leicester<\/br>World Region: Americas<br>Number in region: 2","Football Club: Liverpool<\/br>World Region: Americas<br>Number in region: 3","Football Club: Manchester City<\/br>World Region: Americas<br>Number in region: 6","Football Club: Manchester United<\/br>World Region: Americas<br>Number in region: 5","Football Club: Newcastle<\/br>World Region: Americas<br>Number in region: 5","Football Club: Tottenham<\/br>World Region: Americas<br>Number in region: 5","Football Club: Watford<\/br>World Region: Americas<br>Number in region: 4","Football Club: West Ham<\/br>World Region: Americas<br>Number in region: 7","Football Club: Wolverhampton<\/br>World Region: Americas<br>Number in region: 2"],"hoverinfo":["text","text","text","text","text","text","text","text","text","text","text","text","text","text","text","text","text","text"],"name":"Americas","marker":{"color":"rgba(252,141,98,1)","line":{"color":"rgba(252,141,98,1)"}},"textfont":{"color":"rgba(252,141,98,1)"},"error_y":{"color":"rgba(252,141,98,1)"},"error_x":{"color":"rgba(252,141,98,1)"},"line":{"color":"rgba(252,141,98,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Arsenal","Brighton","Cardiff","Everton","Leicester","Newcastle","Southampton","Tottenham"],"y":[1,2,1,1,2,2,1,1],"type":"scatter","mode":"markers","text":["Football Club: Arsenal<\/br>World Region: Asia<br>Number in region: 1","Football Club: Brighton<\/br>World Region: Asia<br>Number in region: 2","Football Club: Cardiff<\/br>World Region: Asia<br>Number in region: 1","Football Club: Everton<\/br>World Region: Asia<br>Number in region: 1","Football Club: Leicester<\/br>World Region: Asia<br>Number in region: 2","Football Club: Newcastle<\/br>World Region: Asia<br>Number in region: 2","Football Club: Southampton<\/br>World Region: Asia<br>Number in region: 1","Football Club: Tottenham<\/br>World Region: Asia<br>Number in region: 1"],"hoverinfo":["text","text","text","text","text","text","text","text"],"name":"Asia","marker":{"color":"rgba(141,160,203,1)","line":{"color":"rgba(141,160,203,1)"}},"textfont":{"color":"rgba(141,160,203,1)"},"error_y":{"color":"rgba(141,160,203,1)"},"error_x":{"color":"rgba(141,160,203,1)"},"line":{"color":"rgba(141,160,203,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Arsenal","Bournemouth","Brighton","Burnley","Cardiff","Chelsea","Crystal Palace","Everton","Fulham","Huddersfield","Leicester","Liverpool","Manchester City","Manchester United","Newcastle","Southampton","Tottenham","Watford","West Ham","Wolverhampton"],"y":[23,26,13,22,17,19,19,16,19,23,15,16,14,22,15,27,19,18,16,16],"type":"scatter","mode":"markers","text":["Football Club: Arsenal<\/br>World Region: Europe<br>Number in region: 23","Football Club: Bournemouth<\/br>World Region: Europe<br>Number in region: 26","Football Club: Brighton<\/br>World Region: Europe<br>Number in region: 13","Football Club: Burnley<\/br>World Region: Europe<br>Number in region: 22","Football Club: Cardiff<\/br>World Region: Europe<br>Number in region: 17","Football Club: Chelsea<\/br>World Region: Europe<br>Number in region: 19","Football Club: Crystal Palace<\/br>World Region: Europe<br>Number in region: 19","Football Club: Everton<\/br>World Region: Europe<br>Number in region: 16","Football Club: Fulham<\/br>World Region: Europe<br>Number in region: 19","Football Club: Huddersfield<\/br>World Region: Europe<br>Number in region: 23","Football Club: Leicester<\/br>World Region: Europe<br>Number in region: 15","Football Club: Liverpool<\/br>World Region: Europe<br>Number in region: 16","Football Club: Manchester City<\/br>World Region: Europe<br>Number in region: 14","Football Club: Manchester United<\/br>World Region: Europe<br>Number in region: 22","Football Club: Newcastle<\/br>World Region: Europe<br>Number in region: 15","Football Club: Southampton<\/br>World Region: Europe<br>Number in region: 27","Football Club: Tottenham<\/br>World Region: Europe<br>Number in region: 19","Football Club: Watford<\/br>World Region: Europe<br>Number in region: 18","Football Club: West Ham<\/br>World Region: Europe<br>Number in region: 16","Football Club: Wolverhampton<\/br>World Region: Europe<br>Number in region: 16"],"hoverinfo":["text","text","text","text","text","text","text","text","text","text","text","text","text","text","text","text","text","text","text","text"],"name":"Europe","marker":{"color":"rgba(231,138,195,1)","line":{"color":"rgba(231,138,195,1)"}},"textfont":{"color":"rgba(231,138,195,1)"},"error_y":{"color":"rgba(231,138,195,1)"},"error_x":{"color":"rgba(231,138,195,1)"},"line":{"color":"rgba(231,138,195,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Brighton","Burnley","Huddersfield"],"y":[1,1,1],"type":"scatter","mode":"markers","text":["Football Club: Brighton<\/br>World Region: Oceania<br>Number in region: 1","Football Club: Burnley<\/br>World Region: Oceania<br>Number in region: 1","Football Club: Huddersfield<\/br>World Region: Oceania<br>Number in region: 1"],"hoverinfo":["text","text","text"],"name":"Oceania","marker":{"color":"rgba(166,216,84,1)","line":{"color":"rgba(166,216,84,1)"}},"textfont":{"color":"rgba(166,216,84,1)"},"error_y":{"color":"rgba(166,216,84,1)"},"error_x":{"color":"rgba(166,216,84,1)"},"line":{"color":"rgba(166,216,84,1)"},"xaxis":"x","yaxis":"y","frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
 </div>
+</div>
+<div id="tactic-match-style-of-play" class="section level1">
+<h1><strong>Tactic: Match Style of Play</strong></h1>
+</div>
+<div id="club-support-total-spending" class="section level1">
+<h1><strong>Club Support: Total Spending</strong></h1>
 </div>
 
 
@@ -415,6 +457,11 @@ $(document).ready(function () {
 </script>
 
 <!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
 
 <script>
 $(document).ready(function ()  {

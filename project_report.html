@@ -364,29 +364,14 @@ Premier League 2018-19</h1>
 </div>
 
 
-<div id="introduction" class="section level2">
-<h2>Introduction</h2>
-<p>As the most popular football league worldwide, the Premier League
-consists of 20 competitive football clubs in England and attracts some
-of the most talented football players. Statistical inference is commonly
-used as part of sporting analysis to help the clubs to achieve better
-game performance. Data scientists can use past data to build models and
-predict future performance. For our final project, we set our interest
-on the Premier League season 2018/19 because it was the season before
-pandemic and data availability. In this report, we explore the factors
-with significant effect on the goal difference (number of goals scored
-minus goals conceded) for each team by the end of the season. We
-hypothesize that the player’s average age, proportion of non-european
-players, possession rate, passing accuracy, number of yellow/red cards
-received, and money spent in the transfer window are deciding factors
-based on our data exploration process and existing scientific
-studies.</p>
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
 </div>
-<div id="data-sources" class="section level2">
-<h2>Data Sources</h2>
+<div id="data-sources" class="section level1">
+<h1>Data Sources</h1>
 </div>
-<div id="data-manipulation" class="section level2">
-<h2>Data Manipulation</h2>
+<div id="data-manipulation" class="section level1">
+<h1>Data Manipulation</h1>
 <pre class="r"><code>match_df = read_csv(&quot;./data/match_data.csv&quot;)|&gt; 
   janitor::clean_names()
 transfer_df = read_csv(&quot;./data/transfer.csv&quot;)|&gt; 
@@ -413,10 +398,10 @@ q25 &lt;- quantile(age_player_df$age, 0.25)
 q75 &lt;- quantile(age_player_df$age, 0.75)
 
 proportion_age_23_29 &lt;- age_player_df  |&gt; 
-  group_by(team) |&gt;                        # Group by squad
+  group_by(team) |&gt;                       
   summarise(
-    total = n(),                            # Calculate the total number of players in each squad
-    count_23_29 = sum(age &gt;= 23 &amp; age &lt;= 29) # Count the number of players aged between 23 and 29
+    total = n(),                           
+    count_23_29 = sum(age &gt;= 23 &amp; age &lt;= 29) 
   )  |&gt; 
   mutate(proportion = count_23_29 / total)
 
@@ -458,57 +443,12 @@ match_df &lt;- match_df  |&gt;
                            labels = c(&quot;Manchester City&quot;, &quot;Manchester United&quot;, &quot;Tottenham&quot;,&quot;Liverpool&quot;, &quot;Chelsea&quot;, &quot;Arsenal&quot;, &quot;Burnley&quot;, &quot;Everton&quot;, &quot;Leicester&quot;, &quot;Newcastle&quot;, &quot;Crystal Palace&quot;, &quot;Bournemouth&quot;, &quot;West Ham&quot;, &quot;Watford&quot;, &quot;Brighton&quot;, &quot;Huddersfield&quot;, &quot;Southampton&quot;, &quot;Wolverhampton&quot;, &quot;Cardiff&quot;, &quot;Fulham&quot;))</code></pre>
 <pre class="r"><code>match_df &lt;- merge(match_df, transfer_df, by = &quot;team&quot;)
 match_df &lt;- match_df[order(match_df$general_league_position), ] </code></pre>
-<pre class="r"><code>match_df |&gt; 
-  mutate(ave_age_proportion = ave_age_proportion*100,
-         europe_player_proportion = europe_player_proportion*100,
-         card = (general_card_yellow+general_card_red),
-         total = -total,
-         goal_accurary = 100*attack_shots_on_target/attack_shots) |&gt; 
-  select(general_goal_difference, general_points, general_squad_average_age, ave_age_proportion, europe_player_proportion,
-         attack_posession, attack_pass_accuracy, general_card_yellow, total, defence_saves)|&gt; 
-  lm(general_goal_difference ~ general_squad_average_age + ave_age_proportion + europe_player_proportion
-     + attack_posession + attack_pass_accuracy + general_card_yellow + total + defence_saves, data = _ ) |&gt; 
-  summary()</code></pre>
-<pre><code>## 
-## Call:
-## lm(formula = general_goal_difference ~ general_squad_average_age + 
-##     ave_age_proportion + europe_player_proportion + attack_posession + 
-##     attack_pass_accuracy + general_card_yellow + total + defence_saves, 
-##     data = select(mutate(match_df, ave_age_proportion = ave_age_proportion * 
-##         100, europe_player_proportion = europe_player_proportion * 
-##         100, card = (general_card_yellow + general_card_red), 
-##         total = -total, goal_accurary = 100 * attack_shots_on_target/attack_shots), 
-##         general_goal_difference, general_points, general_squad_average_age, 
-##         ave_age_proportion, europe_player_proportion, attack_posession, 
-##         attack_pass_accuracy, general_card_yellow, total, defence_saves))
-## 
-## Residuals:
-##     Min      1Q  Median      3Q     Max 
-## -29.630  -3.530   1.583   6.206  21.063 
-## 
-## Coefficients:
-##                             Estimate Std. Error t value Pr(&gt;|t|)   
-## (Intercept)               346.398764 291.778140   1.187   0.2602   
-## general_squad_average_age  -8.768815   5.735574  -1.529   0.1545   
-## ave_age_proportion         -0.115962   0.402989  -0.288   0.7789   
-## europe_player_proportion   -0.555247   0.473754  -1.172   0.2659   
-## attack_posession            7.927016   2.484598   3.190   0.0086 **
-## attack_pass_accuracy       -5.578477   2.880993  -1.936   0.0789 . 
-## general_card_yellow         0.328944   0.657231   0.500   0.6266   
-## total                       0.009323   0.024979   0.373   0.7161   
-## defence_saves              -0.348724   0.269772  -1.293   0.2226   
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
-## 
-## Residual standard error: 17.11 on 11 degrees of freedom
-## Multiple R-squared:  0.8382, Adjusted R-squared:  0.7205 
-## F-statistic: 7.123 on 8 and 11 DF,  p-value: 0.001985</code></pre>
 </div>
-<div id="exploratory-analysis" class="section level2">
-<h2>Exploratory Analysis</h2>
+<div id="exploratory-analysis" class="section level1">
+<h1>Exploratory Analysis</h1>
 </div>
-<div id="regression-analysis" class="section level2">
-<h2>Regression Analysis</h2>
+<div id="regression-analysis" class="section level1">
+<h1>Regression Analysis</h1>
 </div>
 
 

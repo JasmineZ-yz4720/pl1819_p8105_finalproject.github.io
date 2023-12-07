@@ -5,6 +5,7 @@ output:
     toc: true
     toc_float: true 
     theme: cosmo
+    code_folding: hide
 ---
 
 ```{r setup, include=FALSE}
@@ -14,14 +15,11 @@ library(readxl)
 library(plotly)
 ```
 
-# Player Distribution 
+# **Player Distribution** 
 
 ```{r include=FALSE}
 match_df = read_csv("./data/match_data.csv")|> 
   janitor::clean_names()
-transfer_df = read_csv("./data/transfer.csv")|> 
-  janitor::clean_names() 
-
 player_df = read_excel("./data/player_game.xlsx", sheet = 1) |> 
   janitor::clean_names()|>
   rename(team = squad)
@@ -34,9 +32,6 @@ player_df$team = gsub("Leicester City", "Leicester", player_df$team)
 country_code_df = read.csv("./data/country_codes.csv") |> 
   janitor::clean_names() |> 
   rename(country = fifa) 
-```
-
-```{r include=FALSE}
 GBR_df = country_code_df |> 
   filter(country == "ENG,NIR,SCO,WAL") 
 GBR_df = data.frame(country = unlist(strsplit(as.character(GBR_df$country), ",")),
@@ -53,23 +48,22 @@ player_dist = player_df |>
   drop_na()
 ```
 
-### Player Distribution by Region
+## Player Distribution by Region
 
-```{r}
+```{r include=TRUE}
 player_dist |> 
   ggplot() + geom_bar(aes(x = region_name)) +
   labs(title = "PL Players by World Region", 
        x = "Region of the World",
-       y = "Count of Players") + 
+       y = "Count of Players")+ 
   scale_fill_viridis_d(option = "viridis")
 ```
 
-### Player from top7 PL 2018-19
+## Player Distribution of 20 Teams
 
-```{r player distribution by region}
+```{r include=TRUE}
 player_dist |>
   count(region_name, team) |> 
-  #filter(team %in% pl_1819_top7) |> 
   plot_ly(data = _,
         x = ~ team,
         y = ~ n,
@@ -82,6 +76,9 @@ player_dist |>
   layout(showlegend = TRUE,
          title = "Player Distribution by Football Club",
          xaxis = list(title = "FC"),
-         yaxis = list(title = "Number of Player by World Region)"))
-
+         yaxis = list(title = "Number of Player by World Region"))
 ```
+
+# **Tactic: Match Style of Play** 
+
+# **Club Support: Total Spending** 
