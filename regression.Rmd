@@ -23,7 +23,6 @@ match_df = read_csv("./data/match_data.csv")|>
   janitor::clean_names()
 transfer_df = read_csv("./data/transfer.csv")|> 
   janitor::clean_names() 
-
 player_df = read_excel("./data/player_game.xlsx", sheet = 1) |> 
   janitor::clean_names()|>
   rename(team = squad)
@@ -36,34 +35,24 @@ player_df$team = gsub("Leicester City", "Leicester", player_df$team)
 country_code_df = read.csv("./data/country_codes.csv") |> 
   janitor::clean_names() |> 
   rename(country = fifa) 
-```
 
-
-```{r include=FALSE}
 age_player_df = player_df  |> 
  mutate(age = as.numeric(as.character(age)),
  min = as.numeric(as.character(min)))  |> 
  na.omit()
-
-q25 <- quantile(age_player_df$age, 0.25)
-q75 <- quantile(age_player_df$age, 0.75)
-
 proportion_age_23_29 <- age_player_df  |> 
-  group_by(team) |>                        # Group by squad
+  group_by(team) |>                       
   summarise(
-    total = n(),                            # Calculate the total number of players in each squad
-    count_23_29 = sum(age >= 23 & age <= 29) # Count the number of players aged between 23 and 29
+    total = n(),                           
+    count_23_29 = sum(age >= 23 & age <= 29) 
   )  |> 
   mutate(proportion = count_23_29 / total)
 
-match_df <- match_df  |> 
+match_df = match_df  |> 
   left_join(proportion_age_23_29, by = "team")  |> 
   select(-total, -count_23_29)  |> 
   rename(ave_age_proportion=proportion)
-```
 
-
-```{r include=FALSE}
 GBR_df = country_code_df |> 
   filter(country == "ENG,NIR,SCO,WAL") 
 GBR_df = data.frame(country = unlist(strsplit(as.character(GBR_df$country), ",")),
@@ -78,10 +67,12 @@ player_dist = player_df |>
   select(country, player, team) |> 
   left_join(x = _, y = country_code_df) |> 
   drop_na()
-```
+player_dist$team <- factor(player_dist$team, levels = unique(player_dist$team), 
+                           labels = c("Manchester City", "Liverpool", "Chelsea", "Tottenham", "Arsenal", "Manchester United",
+                                      "Wolverhampton", "Everton", "Leicester", "West Ham", "Watford", "Crystal Palace", 
+                                      "Newcastle", "Bournemouth", "Burnley", "Southampton", "Brighton", "Cardiff", "Fulham", 
+                                      "Huddersfield"))
 
-
-```{r include=FALSE}
 player_region = player_dist |>
   group_by(team) |>                       
   summarise(
@@ -94,24 +85,19 @@ player_europe = player_dist |>
   left_join(x = _, y = player_region) |> 
   mutate(proportion = n_europe/total)
 
-match_df <- match_df  |> 
+match_df = match_df  |> 
   left_join(player_europe, by = "team")  |> 
   select(-total, -n_europe)  |> 
   rename(europe_player_proportion = proportion)
-```
 
-
-```{r include=FALSE}
 transfer_df$team <- factor(transfer_df$team, levels = unique(transfer_df$team), 
-                           labels = c("Manchester City", "Manchester United", "Tottenham","Liverpool", "Chelsea", "Arsenal", "Burnley", "Everton", "Leicester", "Newcastle", "Crystal Palace", "Bournemouth", "West Ham", "Watford", "Brighton", "Huddersfield", "Southampton", "Wolverhampton", "Cardiff", "Fulham"))
+                           labels = c("Manchester City", "Liverpool", "Chelsea", "Tottenham", "Arsenal", "Manchester United",
+                                      "Wolverhampton", "Everton", "Leicester", "West Ham", "Watford", "Crystal Palace", 
+                                      "Newcastle", "Bournemouth", "Burnley", "Southampton", "Brighton", "Cardiff", "Fulham", 
+                                      "Huddersfield"))
+match_df = merge(match_df, transfer_df, by = "team")
+match_df = match_df[order(match_df$general_league_position), ] 
 ```
-
-```{r include=FALSE}
-match_df <- merge(match_df, transfer_df, by = "team")
-match_df <- match_df[order(match_df$general_league_position), ] 
-```
-
-
 
 # Linear Models
 

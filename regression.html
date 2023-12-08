@@ -393,59 +393,59 @@ knitr::kable(model_full, digits=3)</code></pre>
 <tbody>
 <tr class="odd">
 <td align="left">(Intercept)</td>
-<td align="right">442.142</td>
-<td align="right">290.004</td>
-<td align="right">1.525</td>
-<td align="right">0.153</td>
+<td align="right">113.201</td>
+<td align="right">268.924</td>
+<td align="right">0.421</td>
+<td align="right">0.681</td>
 </tr>
 <tr class="even">
 <td align="left">general_squad_average_age</td>
-<td align="right">-11.017</td>
-<td align="right">5.616</td>
-<td align="right">-1.962</td>
-<td align="right">0.073</td>
+<td align="right">-5.331</td>
+<td align="right">5.696</td>
+<td align="right">-0.936</td>
+<td align="right">0.368</td>
 </tr>
 <tr class="odd">
 <td align="left">ave_age_proportion</td>
-<td align="right">-0.253</td>
-<td align="right">0.399</td>
-<td align="right">-0.634</td>
-<td align="right">0.538</td>
+<td align="right">0.061</td>
+<td align="right">0.436</td>
+<td align="right">0.139</td>
+<td align="right">0.892</td>
 </tr>
 <tr class="even">
 <td align="left">europe_player_proportion</td>
-<td align="right">-0.583</td>
-<td align="right">0.486</td>
-<td align="right">-1.198</td>
-<td align="right">0.254</td>
+<td align="right">-0.236</td>
+<td align="right">0.489</td>
+<td align="right">-0.482</td>
+<td align="right">0.639</td>
 </tr>
 <tr class="odd">
 <td align="left">attack_posession</td>
-<td align="right">8.081</td>
-<td align="right">2.550</td>
-<td align="right">3.169</td>
-<td align="right">0.008</td>
+<td align="right">5.197</td>
+<td align="right">3.250</td>
+<td align="right">1.599</td>
+<td align="right">0.136</td>
 </tr>
 <tr class="even">
 <td align="left">attack_pass_accuracy</td>
-<td align="right">-6.097</td>
-<td align="right">2.932</td>
-<td align="right">-2.080</td>
-<td align="right">0.060</td>
+<td align="right">-2.546</td>
+<td align="right">3.293</td>
+<td align="right">-0.773</td>
+<td align="right">0.454</td>
 </tr>
 <tr class="odd">
 <td align="left">general_card_yellow</td>
-<td align="right">-0.208</td>
-<td align="right">0.523</td>
-<td align="right">-0.398</td>
-<td align="right">0.697</td>
+<td align="right">-0.327</td>
+<td align="right">0.507</td>
+<td align="right">-0.645</td>
+<td align="right">0.531</td>
 </tr>
 <tr class="even">
 <td align="left">total</td>
-<td align="right">0.022</td>
-<td align="right">0.024</td>
-<td align="right">0.944</td>
-<td align="right">0.364</td>
+<td align="right">0.028</td>
+<td align="right">0.029</td>
+<td align="right">0.959</td>
+<td align="right">0.356</td>
 </tr>
 </tbody>
 </table>
@@ -516,7 +516,7 @@ cv_df |&gt;
     names_prefix = &quot;rmse_&quot;) |&gt; 
   mutate(model = fct_inorder(model)) |&gt; 
   ggplot(aes(x = model, y = rmse)) + geom_violin()</code></pre>
-<p><img src="regression_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<p><img src="regression_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
 </div>
 
 

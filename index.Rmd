@@ -27,6 +27,14 @@ output:
 <center>
 ![](pics/mancity_win.jpg){width=85%}
 </center>
+
+<br>
+
+<center>
+![](pics/finalrank.jpeg){width=85%}
+</center>
+
+
 <br>
 
 

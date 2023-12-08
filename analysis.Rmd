@@ -15,11 +15,12 @@ library(readxl)
 library(plotly)
 ```
 
-# **Player Distribution** 
 
 ```{r include=FALSE}
 match_df = read_csv("./data/match_data.csv")|> 
   janitor::clean_names()
+transfer_df = read_csv("./data/transfer.csv")|> 
+  janitor::clean_names() 
 player_df = read_excel("./data/player_game.xlsx", sheet = 1) |> 
   janitor::clean_names()|>
   rename(team = squad)
@@ -32,6 +33,24 @@ player_df$team = gsub("Leicester City", "Leicester", player_df$team)
 country_code_df = read.csv("./data/country_codes.csv") |> 
   janitor::clean_names() |> 
   rename(country = fifa) 
+
+age_player_df = player_df  |> 
+ mutate(age = as.numeric(as.character(age)),
+ min = as.numeric(as.character(min)))  |> 
+ na.omit()
+proportion_age_23_29 <- age_player_df  |> 
+  group_by(team) |>                       
+  summarise(
+    total = n(),                           
+    count_23_29 = sum(age >= 23 & age <= 29) 
+  )  |> 
+  mutate(proportion = count_23_29 / total)
+
+match_df = match_df  |> 
+  left_join(proportion_age_23_29, by = "team")  |> 
+  select(-total, -count_23_29)  |> 
+  rename(ave_age_proportion=proportion)
+
 GBR_df = country_code_df |> 
   filter(country == "ENG,NIR,SCO,WAL") 
 GBR_df = data.frame(country = unlist(strsplit(as.character(GBR_df$country), ",")),
@@ -46,9 +65,40 @@ player_dist = player_df |>
   select(country, player, team) |> 
   left_join(x = _, y = country_code_df) |> 
   drop_na()
+player_dist$team <- factor(player_dist$team, levels = unique(player_dist$team), 
+                           labels = c("Manchester City", "Liverpool", "Chelsea", "Tottenham", "Arsenal", "Manchester United",
+                                      "Wolverhampton", "Everton", "Leicester", "West Ham", "Watford", "Crystal Palace", 
+                                      "Newcastle", "Bournemouth", "Burnley", "Southampton", "Brighton", "Cardiff", "Fulham", 
+                                      "Huddersfield"))
+
+player_region = player_dist |>
+  group_by(team) |>                       
+  summarise(
+    total = n()) 
+player_europe = player_dist |>
+  filter(region_name == "Europe") |> 
+  group_by(team) |>                       
+  summarise(
+    n_europe = n()) |> 
+  left_join(x = _, y = player_region) |> 
+  mutate(proportion = n_europe/total)
+
+match_df = match_df  |> 
+  left_join(player_europe, by = "team")  |> 
+  select(-total, -n_europe)  |> 
+  rename(europe_player_proportion = proportion)
+
+transfer_df$team <- factor(transfer_df$team, levels = unique(transfer_df$team), 
+                           labels = c("Manchester City", "Liverpool", "Chelsea", "Tottenham", "Arsenal", "Manchester United",
+                                      "Wolverhampton", "Everton", "Leicester", "West Ham", "Watford", "Crystal Palace", 
+                                      "Newcastle", "Bournemouth", "Burnley", "Southampton", "Brighton", "Cardiff", "Fulham", 
+                                      "Huddersfield"))
+match_df = merge(match_df, transfer_df, by = "team")
+match_df = match_df[order(match_df$general_league_position), ] 
 ```
 
-## Player Distribution by Region
+# **Player Distribution** 
+### Player Distribution by Region
 
 ```{r include=TRUE}
 player_dist |> 
@@ -59,7 +109,9 @@ player_dist |>
   scale_fill_viridis_d(option = "viridis")
 ```
 
-## Player Distribution of 20 Teams
+The bar plot shows the distribution of Premier League football players origin, with categories of 5 regions of the world. From the plot, it can be observed that most of the players are from Europe. Since Premier League takes place in England, which is part of Europe, there might be an association between players origin and performance in the club. 
+
+### Player Distribution of 20 Teams
 
 ```{r include=TRUE}
 player_dist |>
@@ -79,6 +131,66 @@ player_dist |>
          yaxis = list(title = "Number of Player by World Region"))
 ```
 
+We further look at the distribution of player origin of the 20 teams. Using this plot, we can visualize how proportion of players by region origin change from team to team, ordered by the final rank by the end of the season. In the Premier League, there is a law regarding the limit of players without an European nationality. Thus, we intend to explore the relationship between proportion of non-European players and performance of the club.
+
 # **Tactic: Match Style of Play** 
+## Possession Rate 
+
+```{r include=TRUE}
+possession_plot = match_df |> 
+  plot_ly(data = _, x = ~ attack_posession, y = ~ general_goal_difference,
+              type = 'scatter', mode = 'markers', text = ~team, 
+              marker = list(size = 10, color = ~ general_goal_difference, 
+                            colorbar = list(title = 'Goal Difference'), 
+                            colorscale = 'turbo')) |>
+      layout(title = 'Goal Difference vs. Match Style',
+             xaxis = list(title = 'Possession Rate'),
+             yaxis = list(title = 'Goal Difference')) 
+possession_plot
+
+lm(general_goal_difference ~ attack_posession, data = match_df) |> 
+  broom::tidy() |> 
+  knitr::kable(digits = 3)
+```
+
+The scatter plot shows the relationship between possession rate and goal difference. We can observe that teams with a higher attack possession percentage tend to have more goal scored than conceded, indicating a potential correlation between controlling the game and league success.
+
+
+## Long Pass vs. Short Pass
+
+```{r include=TRUE}
+pass_plot = match_df |> 
+  plot_ly(data = _ , x = ~ attack_passes_long, y = ~ attack_passes_back,
+              type = 'scatter', mode = 'markers', 
+              text = ~paste(team, general_goal_difference), 
+              marker = list(size = ~ general_won, color = ~ general_goal_difference, 
+                            colorbar = list(title = 'Goal Difference'),
+                            colorscale = 'turbo')) |>
+      layout(title = 'Long Pass vs Short Pass',
+             xaxis = list(title = 'Long Pass'),
+             yaxis = list(title = 'Short Pass'))
+pass_plot
+```
+
+This plot compares the number of long passes to short passes for each team, with the size of each point representing the number of games won and the color gradient representing general goal difference. We can observe that teams that score more goals tend to have more short passes while teams that score less goals tend to have more long passes. Passing style greatly defines match tactic, with short pass indicating better ball control and cooperation among the team. We find it interesting to examine team tactics through match data. 
+
 
 # **Club Support: Total Spending** 
+
+Transfer windows opens twice a year, which is when football clubs trade players with each other. Economic support from clubs can be decisive in bidding talented players and bringing them to the club. Net spending is calculated by the money spent from buying players minus the money received from selling players. 
+
+```{r include=TRUE}
+spending_plot = plot_ly(transfer_df, 
+        x = ~team, 
+        y = ~ -total, 
+        type = "bar", 
+        color = ~team,
+        colors = 'viridis') |>
+  layout(yaxis = list(title = 'Total Spending (in Millions)'),
+         xaxis = list(title = 'Team'),
+         title = 'Transfer Market Total Spending in Recent Decade')
+spending_plot
+```
+
+
+This histogram shows the net total amount of money spent by the different teams on transfers from 2009 to 2019. We can observe that Manchester City, Liverpool and Arsenal are 3 teams with significant spending in the transfer market over the past decade. Comparing the net spending across the teams, ordered by final rank of the season, it can be seen that generally more spending leads to a better position in Premier League at the end. One outlier is Chelsea Football Club, who may have earned a considerable amount of money by selling players from U-17. 
