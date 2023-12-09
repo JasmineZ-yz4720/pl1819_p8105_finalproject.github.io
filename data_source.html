@@ -33,6 +33,7 @@
 <link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
 <script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
+<script src="site_libs/navigation-1.1/codefolding.js"></script>
 <link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
 <link href="site_libs/font-awesome-6.4.2/css/all.min.css" rel="stylesheet" />
@@ -221,6 +222,9 @@ $(document).ready(function () {
 </style>
 
 <!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
 
 
 
@@ -356,6 +360,14 @@ div.tocify {
 
 <div id="header">
 
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
 
 
 <h1 class="title toc-ignore">Data Sources</h1>
@@ -363,7 +375,708 @@ div.tocify {
 </div>
 
 
+<div id="source-1-match-statistic-summary" class="section level1">
+<h1><strong>Source 1: Match Statistic Summary</strong></h1>
+<p>The dataset of <a
+href="https://www.kaggle.com/datasets/thesiff/premierleague1819/">match
+statistics</a> was downloaded and read in. It includes different
+measures of game statistics for 20 teams in Premier League of season
+2018-19. Our intended outcome value is
+<code>general_goal_difference</code>, which is measured by the goal
+scored minus goal conceded. Variables of measure include basic
+information about the squad, total fouls received, goal stats, attack
+stats, defense stats, possession rate, and TV revenue. We selected the
+variables of interest: <code>general_goal_difference</code>,
+<code>general_squad_average_age</code>, <code>attack_posession</code>,
+<code>attack_pass_accuracy</code>, <code>general_card_yellow</code>.</p>
+<p>Teams are ordered by the final league position, from 1 to 20. It can
+be observed that higher ranked teams have positive goal difference,
+while lower ranked teams have negative goal difference. The seperation
+between positive and negative goal difference happens about rank 10 so
+that we decide <code>general_goal_difference</code> is an accurate
+representation of the team performance outcome.</p>
+<pre class="r"><code>match_df = read_csv(&quot;./data/match_data.csv&quot;)|&gt; 
+  janitor::clean_names() |&gt; 
+  select(team, general_league_position, general_goal_difference, general_squad_average_age, attack_posession, 
+         attack_pass_accuracy, general_card_yellow)
+match_df |&gt; 
+  knitr::kable()</code></pre>
+<table>
+<colgroup>
+<col width="12%" />
+<col width="16%" />
+<col width="16%" />
+<col width="17%" />
+<col width="11%" />
+<col width="14%" />
+<col width="13%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">team</th>
+<th align="right">general_league_position</th>
+<th align="right">general_goal_difference</th>
+<th align="right">general_squad_average_age</th>
+<th align="right">attack_posession</th>
+<th align="right">attack_pass_accuracy</th>
+<th align="right">general_card_yellow</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Manchester City</td>
+<td align="right">1</td>
+<td align="right">72</td>
+<td align="right">27.1</td>
+<td align="right">64.0</td>
+<td align="right">89.0</td>
+<td align="right">44</td>
+</tr>
+<tr class="even">
+<td align="left">Liverpool</td>
+<td align="right">2</td>
+<td align="right">67</td>
+<td align="right">26.8</td>
+<td align="right">58.8</td>
+<td align="right">84.4</td>
+<td align="right">38</td>
+</tr>
+<tr class="odd">
+<td align="left">Chelsea</td>
+<td align="right">3</td>
+<td align="right">24</td>
+<td align="right">28.1</td>
+<td align="right">59.9</td>
+<td align="right">87.6</td>
+<td align="right">49</td>
+</tr>
+<tr class="even">
+<td align="left">Tottenham</td>
+<td align="right">4</td>
+<td align="right">28</td>
+<td align="right">27.0</td>
+<td align="right">56.7</td>
+<td align="right">83.2</td>
+<td align="right">56</td>
+</tr>
+<tr class="odd">
+<td align="left">Arsenal</td>
+<td align="right">5</td>
+<td align="right">22</td>
+<td align="right">27.5</td>
+<td align="right">56.1</td>
+<td align="right">83.3</td>
+<td align="right">72</td>
+</tr>
+<tr class="even">
+<td align="left">Manchester United</td>
+<td align="right">6</td>
+<td align="right">11</td>
+<td align="right">27.3</td>
+<td align="right">53.3</td>
+<td align="right">82.3</td>
+<td align="right">73</td>
+</tr>
+<tr class="odd">
+<td align="left">Wolverhampton</td>
+<td align="right">7</td>
+<td align="right">1</td>
+<td align="right">27.2</td>
+<td align="right">47.4</td>
+<td align="right">78.2</td>
+<td align="right">72</td>
+</tr>
+<tr class="even">
+<td align="left">Everton</td>
+<td align="right">8</td>
+<td align="right">8</td>
+<td align="right">27.0</td>
+<td align="right">51.0</td>
+<td align="right">77.3</td>
+<td align="right">55</td>
+</tr>
+<tr class="odd">
+<td align="left">Leicester</td>
+<td align="right">9</td>
+<td align="right">3</td>
+<td align="right">29.0</td>
+<td align="right">50.8</td>
+<td align="right">79.2</td>
+<td align="right">57</td>
+</tr>
+<tr class="even">
+<td align="left">West Ham</td>
+<td align="right">10</td>
+<td align="right">-3</td>
+<td align="right">28.3</td>
+<td align="right">49.0</td>
+<td align="right">78.7</td>
+<td align="right">59</td>
+</tr>
+<tr class="odd">
+<td align="left">Watford</td>
+<td align="right">11</td>
+<td align="right">-7</td>
+<td align="right">26.8</td>
+<td align="right">47.4</td>
+<td align="right">76.1</td>
+<td align="right">77</td>
+</tr>
+<tr class="even">
+<td align="left">Crystal Palace</td>
+<td align="right">12</td>
+<td align="right">-2</td>
+<td align="right">26.8</td>
+<td align="right">46.6</td>
+<td align="right">76.8</td>
+<td align="right">58</td>
+</tr>
+<tr class="odd">
+<td align="left">Newcastle</td>
+<td align="right">13</td>
+<td align="right">-6</td>
+<td align="right">26.1</td>
+<td align="right">42.9</td>
+<td align="right">72.9</td>
+<td align="right">57</td>
+</tr>
+<tr class="even">
+<td align="left">Bournemouth</td>
+<td align="right">14</td>
+<td align="right">-14</td>
+<td align="right">26.2</td>
+<td align="right">47.7</td>
+<td align="right">78.1</td>
+<td align="right">60</td>
+</tr>
+<tr class="odd">
+<td align="left">Burnley</td>
+<td align="right">15</td>
+<td align="right">-23</td>
+<td align="right">27.3</td>
+<td align="right">43.4</td>
+<td align="right">70.3</td>
+<td align="right">75</td>
+</tr>
+<tr class="even">
+<td align="left">Southampton</td>
+<td align="right">16</td>
+<td align="right">-20</td>
+<td align="right">28.0</td>
+<td align="right">45.4</td>
+<td align="right">74.0</td>
+<td align="right">71</td>
+</tr>
+<tr class="odd">
+<td align="left">Brighton</td>
+<td align="right">17</td>
+<td align="right">-25</td>
+<td align="right">28.4</td>
+<td align="right">44.1</td>
+<td align="right">74.8</td>
+<td align="right">60</td>
+</tr>
+<tr class="even">
+<td align="left">Cardiff</td>
+<td align="right">18</td>
+<td align="right">-35</td>
+<td align="right">29.7</td>
+<td align="right">39.1</td>
+<td align="right">63.9</td>
+<td align="right">66</td>
+</tr>
+<tr class="odd">
+<td align="left">Fulham</td>
+<td align="right">19</td>
+<td align="right">-47</td>
+<td align="right">26.7</td>
+<td align="right">49.2</td>
+<td align="right">80.3</td>
+<td align="right">68</td>
+</tr>
+<tr class="even">
+<td align="left">Huddersfield</td>
+<td align="right">20</td>
+<td align="right">-54</td>
+<td align="right">28.5</td>
+<td align="right">47.1</td>
+<td align="right">75.8</td>
+<td align="right">55</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="source-2-player-statistic-age" class="section level1">
+<h1><strong>Source 2: Player Statistic (Age)</strong></h1>
+<p>The dataset of <a
+href="https://fbref.com/en/comps/9/2018-2019/stats/2018-2019-Premier-League-Stats#all_stats_standard">player
+statistics</a> was extracted and read in. Variables of interest are
+selected, including player’s nation, team, age, and total minutes played
+during the season. Team names are modified so that they match with
+<code>match_df</code>, preparing for further datasets merging. Below
+shows a couple player entries.</p>
+<pre class="r"><code>player_df = read_excel(&quot;./data/player_game.xlsx&quot;, sheet = 1) |&gt; 
+  janitor::clean_names()|&gt;
+  rename(team = squad)|&gt; 
+  select(player, nation, team, age)
+player_df$team = gsub(&quot;Manchester Utd&quot;, &quot;Manchester United&quot;, player_df$team)
+player_df$team = gsub(&quot;Newcastle Utd&quot;, &quot;Newcastle&quot;, player_df$team)
+player_df$team = gsub(&quot;Wolves&quot;, &quot;Wolverhampton&quot;, player_df$team)
+player_df$team = gsub(&quot;Cardiff City&quot;, &quot;Cardiff&quot;, player_df$team)
+player_df$team = gsub(&quot;Leicester City&quot;, &quot;Leicester&quot;, player_df$team)
 
+player_df |&gt;
+  head(5) |&gt; 
+  knitr::kable() </code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">player</th>
+<th align="left">nation</th>
+<th align="left">team</th>
+<th align="left">age</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Patrick van Aanholt</td>
+<td align="left">nl NED</td>
+<td align="left">Crystal Palace</td>
+<td align="left">27</td>
+</tr>
+<tr class="even">
+<td align="left">Sergio Agüero</td>
+<td align="left">ar ARG</td>
+<td align="left">Manchester City</td>
+<td align="left">30</td>
+</tr>
+<tr class="odd">
+<td align="left">Nathan Aké</td>
+<td align="left">nl NED</td>
+<td align="left">Bournemouth</td>
+<td align="left">23</td>
+</tr>
+<tr class="even">
+<td align="left">Marc Albrighton</td>
+<td align="left">eng ENG</td>
+<td align="left">Leicester</td>
+<td align="left">28</td>
+</tr>
+<tr class="odd">
+<td align="left">Toby Alderweireld</td>
+<td align="left">be BEL</td>
+<td align="left">Tottenham</td>
+<td align="left">29</td>
+</tr>
+</tbody>
+</table>
+<p>Using <code>player_df</code>, we changed the <code>age</code>
+variable to number so that we could calculate the 25th and 75th
+percentile of age distribution, which is 23 and 29 years old. Then we
+calculated the proportion of players that belong to the age range of 23
+to 29 years old, grouped by 20 different teams. We merged the
+<code>ave_age_proportion</code> variable into <code>match_df</code>
+using <code>left_join.</code> Belows shows the result for the top 5
+teams.</p>
+<pre class="r"><code>age_player_df = player_df  |&gt; 
+ mutate(age = as.numeric(as.character(age))) |&gt; 
+ na.omit()
+q25 &lt;- quantile(age_player_df$age, 0.25)
+q75 &lt;- quantile(age_player_df$age, 0.75)
+
+proportion_age_23_29 &lt;- age_player_df  |&gt; 
+  group_by(team) |&gt;                       
+  summarise(
+    total = n(),                           
+    count_23_29 = sum(age &gt;= 23 &amp; age &lt;= 29))  |&gt; 
+  mutate(proportion = count_23_29 / total)
+
+match_df = match_df  |&gt; 
+  left_join(proportion_age_23_29, by = &quot;team&quot;)  |&gt; 
+  select(-total, -count_23_29)  |&gt; 
+  rename(ave_age_proportion=proportion)
+
+match_df|&gt;
+  head(5) |&gt; 
+  knitr::kable()</code></pre>
+<table>
+<colgroup>
+<col width="9%" />
+<col width="14%" />
+<col width="14%" />
+<col width="15%" />
+<col width="10%" />
+<col width="12%" />
+<col width="11%" />
+<col width="11%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">team</th>
+<th align="right">general_league_position</th>
+<th align="right">general_goal_difference</th>
+<th align="right">general_squad_average_age</th>
+<th align="right">attack_posession</th>
+<th align="right">attack_pass_accuracy</th>
+<th align="right">general_card_yellow</th>
+<th align="right">ave_age_proportion</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Manchester City</td>
+<td align="right">1</td>
+<td align="right">72</td>
+<td align="right">27.1</td>
+<td align="right">64.0</td>
+<td align="right">89.0</td>
+<td align="right">44</td>
+<td align="right">0.5714286</td>
+</tr>
+<tr class="even">
+<td align="left">Liverpool</td>
+<td align="right">2</td>
+<td align="right">67</td>
+<td align="right">26.8</td>
+<td align="right">58.8</td>
+<td align="right">84.4</td>
+<td align="right">38</td>
+<td align="right">0.7826087</td>
+</tr>
+<tr class="odd">
+<td align="left">Chelsea</td>
+<td align="right">3</td>
+<td align="right">24</td>
+<td align="right">28.1</td>
+<td align="right">59.9</td>
+<td align="right">87.6</td>
+<td align="right">49</td>
+<td align="right">0.5833333</td>
+</tr>
+<tr class="even">
+<td align="left">Tottenham</td>
+<td align="right">4</td>
+<td align="right">28</td>
+<td align="right">27.0</td>
+<td align="right">56.7</td>
+<td align="right">83.2</td>
+<td align="right">56</td>
+<td align="right">0.5714286</td>
+</tr>
+<tr class="odd">
+<td align="left">Arsenal</td>
+<td align="right">5</td>
+<td align="right">22</td>
+<td align="right">27.5</td>
+<td align="right">56.1</td>
+<td align="right">83.3</td>
+<td align="right">72</td>
+<td align="right">0.5000000</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="source-3-player-statistic-country-region"
+class="section level1">
+<h1><strong>Source 3: Player Statistic (Country, Region)</strong></h1>
+<p><code>player_df</code> has variable <code>country</code>, which is
+where each player comes from. Dataset of <a
+href="https://github.com/datasets/country-codes/blob/master/data/country-codes.csv">country
+codes</a> was downloaded and read in. <code>country_code_df</code> is
+manipulated so that Great Britain is separated into
+<code>ENG, NIR, SCO, WAL</code>. Variables include the country name,
+country code, and the region that country belongs to. Belows shows 5
+entries of cleaned <code>country_code_df</code>.</p>
+<pre class="r"><code>country_code_df = read.csv(&quot;./data/country_codes.csv&quot;) |&gt; 
+  janitor::clean_names() |&gt; 
+  rename(country = fifa) 
+GBR_df = country_code_df |&gt; 
+  filter(country == &quot;ENG,NIR,SCO,WAL&quot;) 
+GBR_df = data.frame(country = unlist(strsplit(as.character(GBR_df$country), &quot;,&quot;)),
+                    official_name_en = GBR_df$official_name_en,
+                    region_name = GBR_df$region_name)
+country_code_df = country_code_df |&gt; 
+  select(country, official_name_en, region_name) |&gt; 
+  bind_rows(GBR_df)
+
+country_code_df|&gt;
+  head(5) |&gt; 
+  knitr::kable()</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">country</th>
+<th align="left">official_name_en</th>
+<th align="left">region_name</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">TPE</td>
+<td align="left"></td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">AFG</td>
+<td align="left">Afghanistan</td>
+<td align="left">Asia</td>
+</tr>
+<tr class="odd">
+<td align="left">ALB</td>
+<td align="left">Albania</td>
+<td align="left">Europe</td>
+</tr>
+<tr class="even">
+<td align="left">ALG</td>
+<td align="left">Algeria</td>
+<td align="left">Africa</td>
+</tr>
+<tr class="odd">
+<td align="left">ASA</td>
+<td align="left">American Samoa</td>
+<td align="left">Oceania</td>
+</tr>
+</tbody>
+</table>
+<p><code>player_df</code> is manipulated so that country origin for each
+player is saved as a variable. Then the dataset is merged by
+<code>country_code_df</code> and each player has a new variable
+indicating the region he comes from. Then the proportion of European
+players is calculated for each team and the variable
+<code>europe_player_proportion</code> is added to <code>match_df</code>
+by merging the datasets. Below shows the result of the dataframe for the
+top 5 teams.</p>
+<pre class="r"><code>player_dist = player_df |&gt;
+  separate(nation, into = c(&quot;country_abbre&quot;, &quot;country&quot;), convert = TRUE) |&gt; 
+  select(country, player, team) |&gt; 
+  left_join(x = _, y = country_code_df) |&gt; 
+  drop_na()
+player_dist$team &lt;- factor(player_dist$team, levels = unique(player_dist$team), 
+                           labels = c(&quot;Manchester City&quot;, &quot;Liverpool&quot;, &quot;Chelsea&quot;, &quot;Tottenham&quot;, &quot;Arsenal&quot;, &quot;Manchester United&quot;,
+                                      &quot;Wolverhampton&quot;, &quot;Everton&quot;, &quot;Leicester&quot;, &quot;West Ham&quot;, &quot;Watford&quot;, &quot;Crystal Palace&quot;, 
+                                      &quot;Newcastle&quot;, &quot;Bournemouth&quot;, &quot;Burnley&quot;, &quot;Southampton&quot;, &quot;Brighton&quot;, &quot;Cardiff&quot;, &quot;Fulham&quot;, 
+                                      &quot;Huddersfield&quot;))
+
+player_region = player_dist |&gt;
+  group_by(team) |&gt;                       
+  summarise(
+    total = n()) 
+player_europe = player_dist |&gt;
+  filter(region_name == &quot;Europe&quot;) |&gt; 
+  group_by(team) |&gt;                       
+  summarise(
+    n_europe = n()) |&gt; 
+  left_join(x = _, y = player_region) |&gt; 
+  mutate(proportion = n_europe/total)
+
+match_df = match_df  |&gt; 
+  left_join(player_europe, by = &quot;team&quot;)  |&gt; 
+  select(-total, -n_europe)  |&gt; 
+  rename(europe_player_proportion = proportion)
+match_df|&gt;
+  head(5) |&gt; 
+  knitr::kable()</code></pre>
+<table>
+<colgroup>
+<col width="8%" />
+<col width="12%" />
+<col width="12%" />
+<col width="13%" />
+<col width="8%" />
+<col width="10%" />
+<col width="10%" />
+<col width="9%" />
+<col width="13%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">team</th>
+<th align="right">general_league_position</th>
+<th align="right">general_goal_difference</th>
+<th align="right">general_squad_average_age</th>
+<th align="right">attack_posession</th>
+<th align="right">attack_pass_accuracy</th>
+<th align="right">general_card_yellow</th>
+<th align="right">ave_age_proportion</th>
+<th align="right">europe_player_proportion</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Manchester City</td>
+<td align="right">1</td>
+<td align="right">72</td>
+<td align="right">27.1</td>
+<td align="right">64.0</td>
+<td align="right">89.0</td>
+<td align="right">44</td>
+<td align="right">0.5714286</td>
+<td align="right">0.7307692</td>
+</tr>
+<tr class="even">
+<td align="left">Liverpool</td>
+<td align="right">2</td>
+<td align="right">67</td>
+<td align="right">26.8</td>
+<td align="right">58.8</td>
+<td align="right">84.4</td>
+<td align="right">38</td>
+<td align="right">0.7826087</td>
+<td align="right">0.6666667</td>
+</tr>
+<tr class="odd">
+<td align="left">Chelsea</td>
+<td align="right">3</td>
+<td align="right">24</td>
+<td align="right">28.1</td>
+<td align="right">59.9</td>
+<td align="right">87.6</td>
+<td align="right">49</td>
+<td align="right">0.5833333</td>
+<td align="right">0.9285714</td>
+</tr>
+<tr class="even">
+<td align="left">Tottenham</td>
+<td align="right">4</td>
+<td align="right">28</td>
+<td align="right">27.0</td>
+<td align="right">56.7</td>
+<td align="right">83.2</td>
+<td align="right">56</td>
+<td align="right">0.5714286</td>
+<td align="right">0.6000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Arsenal</td>
+<td align="right">5</td>
+<td align="right">22</td>
+<td align="right">27.5</td>
+<td align="right">56.1</td>
+<td align="right">83.3</td>
+<td align="right">72</td>
+<td align="right">0.5000000</td>
+<td align="right">0.6785714</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="source-4-transfer-market-spending" class="section level1">
+<h1><strong>Source 4: Transfer Market Spending</strong></h1>
+<p>The dataset of <a
+href="https://www.kaggle.com/datasets/thesiff/premierleague1819/">spending
+in the transfer market</a> is downloaded and read in.
+<code>transfer_df</code> includes variables indicating net spending for
+each year from 2009 to 2019, and the total net spending over the past
+decade. We are interested in exploring the relationship between total
+net spending and team performance so these two variables are selected
+and merged into <code>match_df</code> for analysis. Below shows the
+result of our final cleaned <code>match_df</code> for top 5 teams.</p>
+<pre class="r"><code>transfer_df = read_csv(&quot;./data/transfer.csv&quot;)|&gt; 
+  janitor::clean_names() 
+transfer_df$team &lt;- factor(transfer_df$team, levels = unique(transfer_df$team), 
+                           labels = c(&quot;Manchester City&quot;, &quot;Liverpool&quot;, &quot;Chelsea&quot;, &quot;Tottenham&quot;, &quot;Arsenal&quot;, &quot;Manchester United&quot;,
+                                      &quot;Wolverhampton&quot;, &quot;Everton&quot;, &quot;Leicester&quot;, &quot;West Ham&quot;, &quot;Watford&quot;, &quot;Crystal Palace&quot;, 
+                                      &quot;Newcastle&quot;, &quot;Bournemouth&quot;, &quot;Burnley&quot;, &quot;Southampton&quot;, &quot;Brighton&quot;, &quot;Cardiff&quot;, &quot;Fulham&quot;, 
+                                      &quot;Huddersfield&quot;))
+transfer_df = transfer_df |&gt; 
+  select(team, total)
+match_df = match_df  |&gt; 
+  left_join(transfer_df, by = &quot;team&quot;) 
+
+match_df|&gt;
+  head(5) |&gt; 
+  knitr::kable()</code></pre>
+<table style="width:100%;">
+<colgroup>
+<col width="7%" />
+<col width="11%" />
+<col width="11%" />
+<col width="12%" />
+<col width="8%" />
+<col width="10%" />
+<col width="9%" />
+<col width="9%" />
+<col width="12%" />
+<col width="4%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">team</th>
+<th align="right">general_league_position</th>
+<th align="right">general_goal_difference</th>
+<th align="right">general_squad_average_age</th>
+<th align="right">attack_posession</th>
+<th align="right">attack_pass_accuracy</th>
+<th align="right">general_card_yellow</th>
+<th align="right">ave_age_proportion</th>
+<th align="right">europe_player_proportion</th>
+<th align="right">total</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Manchester City</td>
+<td align="right">1</td>
+<td align="right">72</td>
+<td align="right">27.1</td>
+<td align="right">64.0</td>
+<td align="right">89.0</td>
+<td align="right">44</td>
+<td align="right">0.5714286</td>
+<td align="right">0.7307692</td>
+<td align="right">-1070.83</td>
+</tr>
+<tr class="even">
+<td align="left">Liverpool</td>
+<td align="right">2</td>
+<td align="right">67</td>
+<td align="right">26.8</td>
+<td align="right">58.8</td>
+<td align="right">84.4</td>
+<td align="right">38</td>
+<td align="right">0.7826087</td>
+<td align="right">0.6666667</td>
+<td align="right">-666.55</td>
+</tr>
+<tr class="odd">
+<td align="left">Chelsea</td>
+<td align="right">3</td>
+<td align="right">24</td>
+<td align="right">28.1</td>
+<td align="right">59.9</td>
+<td align="right">87.6</td>
+<td align="right">49</td>
+<td align="right">0.5833333</td>
+<td align="right">0.9285714</td>
+<td align="right">-16.78</td>
+</tr>
+<tr class="even">
+<td align="left">Tottenham</td>
+<td align="right">4</td>
+<td align="right">28</td>
+<td align="right">27.0</td>
+<td align="right">56.7</td>
+<td align="right">83.2</td>
+<td align="right">56</td>
+<td align="right">0.5714286</td>
+<td align="right">0.6000000</td>
+<td align="right">-324.86</td>
+</tr>
+<tr class="odd">
+<td align="left">Arsenal</td>
+<td align="right">5</td>
+<td align="right">22</td>
+<td align="right">27.5</td>
+<td align="right">56.1</td>
+<td align="right">83.3</td>
+<td align="right">72</td>
+<td align="right">0.5000000</td>
+<td align="right">0.6785714</td>
+<td align="right">-560.93</td>
+</tr>
+</tbody>
+</table>
+</div>
 
 
 
@@ -400,6 +1113,11 @@ $(document).ready(function () {
 </script>
 
 <!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
 
 <script>
 $(document).ready(function ()  {

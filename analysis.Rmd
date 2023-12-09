@@ -93,8 +93,10 @@ transfer_df$team <- factor(transfer_df$team, levels = unique(transfer_df$team),
                                       "Wolverhampton", "Everton", "Leicester", "West Ham", "Watford", "Crystal Palace", 
                                       "Newcastle", "Bournemouth", "Burnley", "Southampton", "Brighton", "Cardiff", "Fulham", 
                                       "Huddersfield"))
-match_df = merge(match_df, transfer_df, by = "team")
-match_df = match_df[order(match_df$general_league_position), ] 
+transfer_df = transfer_df |> 
+  select(team, total)
+match_df = match_df  |> 
+  left_join(transfer_df, by = "team") 
 ```
 
 # **Player Distribution** 

@@ -5,4 +5,156 @@ output:
     toc: true
     toc_float: true 
     theme: cosmo
+    code_folding: hide
 ---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(include = FALSE)
+library(tidyverse)
+library(readxl)
+```
+
+# **Source 1: Match Statistic Summary**
+
+The dataset of [match statistics](https://www.kaggle.com/datasets/thesiff/premierleague1819/) was downloaded and read in. It includes different measures of game statistics for 20 teams in Premier League of season 2018-19. Our intended outcome value is `general_goal_difference`, which is measured by the goal scored minus goal conceded. Variables of measure include basic information about the squad, total fouls received, goal stats, attack stats, defense stats, possession rate, and TV revenue. We selected the variables of interest: `general_goal_difference`, `general_squad_average_age`, `attack_posession`, `attack_pass_accuracy`, `general_card_yellow`.
+
+Teams are ordered by the final league position, from 1 to 20. It can be observed that higher ranked teams have positive goal difference, while lower ranked teams have negative goal difference. The seperation between positive and negative goal difference happens about rank 10 so that we decide `general_goal_difference` is an accurate representation of the team performance outcome.
+
+```{r message=FALSE, warning=FALSE, include=TRUE}
+match_df = read_csv("./data/match_data.csv")|> 
+  janitor::clean_names() |> 
+  select(team, general_league_position, general_goal_difference, general_squad_average_age, attack_posession, 
+         attack_pass_accuracy, general_card_yellow)
+match_df |> 
+  knitr::kable()
+```
+
+
+# **Source 2: Player Statistic (Age)**
+
+The dataset of [player statistics](https://fbref.com/en/comps/9/2018-2019/stats/2018-2019-Premier-League-Stats#all_stats_standard) was extracted and read in. Variables of interest are selected, including player's nation, team, age, and total minutes played during the season. Team names are modified so that they match with `match_df`, preparing for further datasets merging. Below shows a couple player entries.
+
+```{r message=FALSE, warning=FALSE, include=TRUE}
+player_df = read_excel("./data/player_game.xlsx", sheet = 1) |> 
+  janitor::clean_names()|>
+  rename(team = squad)|> 
+  select(player, nation, team, age)
+player_df$team = gsub("Manchester Utd", "Manchester United", player_df$team)
+player_df$team = gsub("Newcastle Utd", "Newcastle", player_df$team)
+player_df$team = gsub("Wolves", "Wolverhampton", player_df$team)
+player_df$team = gsub("Cardiff City", "Cardiff", player_df$team)
+player_df$team = gsub("Leicester City", "Leicester", player_df$team)
+
+player_df |>
+  head(5) |> 
+  knitr::kable() 
+```
+Using `player_df`, we changed the `age` variable to number so that we could calculate the 25th and 75th percentile of age distribution, which is 23 and 29 years old. Then we calculated the proportion of players that belong to the age range of 23 to 29 years old, grouped by 20 different teams. We merged the `ave_age_proportion` variable into `match_df` using `left_join.` Belows shows the result for the top 5 teams.
+
+
+```{r message=FALSE, warning=FALSE, include=TRUE}
+age_player_df = player_df  |> 
+ mutate(age = as.numeric(as.character(age))) |> 
+ na.omit()
+q25 <- quantile(age_player_df$age, 0.25)
+q75 <- quantile(age_player_df$age, 0.75)
+
+proportion_age_23_29 <- age_player_df  |> 
+  group_by(team) |>                       
+  summarise(
+    total = n(),                           
+    count_23_29 = sum(age >= 23 & age <= 29))  |> 
+  mutate(proportion = count_23_29 / total)
+
+match_df = match_df  |> 
+  left_join(proportion_age_23_29, by = "team")  |> 
+  select(-total, -count_23_29)  |> 
+  rename(ave_age_proportion=proportion)
+
+match_df|>
+  head(5) |> 
+  knitr::kable()
+```
+
+# **Source 3: Player Statistic (Country, Region)** 
+
+`player_df` has variable `country`, which is where each player comes from. Dataset of [country codes](https://github.com/datasets/country-codes/blob/master/data/country-codes.csv) was downloaded and read in. `country_code_df` is manipulated so that Great Britain is separated into `ENG, NIR, SCO, WAL`. Variables include the country name, country code, and the region that country belongs to. Belows shows 5 entries of cleaned `country_code_df`.
+
+```{r message=FALSE, warning=FALSE, include=TRUE}
+country_code_df = read.csv("./data/country_codes.csv") |> 
+  janitor::clean_names() |> 
+  rename(country = fifa) 
+GBR_df = country_code_df |> 
+  filter(country == "ENG,NIR,SCO,WAL") 
+GBR_df = data.frame(country = unlist(strsplit(as.character(GBR_df$country), ",")),
+                    official_name_en = GBR_df$official_name_en,
+                    region_name = GBR_df$region_name)
+country_code_df = country_code_df |> 
+  select(country, official_name_en, region_name) |> 
+  bind_rows(GBR_df)
+
+country_code_df|>
+  head(5) |> 
+  knitr::kable()
+```
+
+`player_df` is manipulated so that country origin for each player is saved as a variable. Then the dataset is merged by `country_code_df` and each player has a new variable indicating the region he comes from. Then the proportion of European players is calculated for each team and the variable `europe_player_proportion` is added to `match_df` by merging the datasets. Below shows the result of the dataframe for the top 5 teams. 
+
+```{r message=FALSE, warning=FALSE, include=TRUE}
+player_dist = player_df |>
+  separate(nation, into = c("country_abbre", "country"), convert = TRUE) |> 
+  select(country, player, team) |> 
+  left_join(x = _, y = country_code_df) |> 
+  drop_na()
+player_dist$team <- factor(player_dist$team, levels = unique(player_dist$team), 
+                           labels = c("Manchester City", "Liverpool", "Chelsea", "Tottenham", "Arsenal", "Manchester United",
+                                      "Wolverhampton", "Everton", "Leicester", "West Ham", "Watford", "Crystal Palace", 
+                                      "Newcastle", "Bournemouth", "Burnley", "Southampton", "Brighton", "Cardiff", "Fulham", 
+                                      "Huddersfield"))
+
+player_region = player_dist |>
+  group_by(team) |>                       
+  summarise(
+    total = n()) 
+player_europe = player_dist |>
+  filter(region_name == "Europe") |> 
+  group_by(team) |>                       
+  summarise(
+    n_europe = n()) |> 
+  left_join(x = _, y = player_region) |> 
+  mutate(proportion = n_europe/total)
+
+match_df = match_df  |> 
+  left_join(player_europe, by = "team")  |> 
+  select(-total, -n_europe)  |> 
+  rename(europe_player_proportion = proportion)
+match_df|>
+  head(5) |> 
+  knitr::kable()
+```
+
+
+# **Source 4: Transfer Market Spending**
+
+The dataset of [spending in the transfer market](https://www.kaggle.com/datasets/thesiff/premierleague1819/) is downloaded and read in. `transfer_df` includes variables indicating net spending for each year from 2009 to 2019, and the total net spending over the past decade. We are interested in exploring the relationship between total net spending and team performance so these two variables are selected and merged into `match_df` for analysis. Below shows the result of our final cleaned `match_df` for top 5 teams. 
+
+
+```{r message=FALSE, warning=FALSE, include=TRUE}
+transfer_df = read_csv("./data/transfer.csv")|> 
+  janitor::clean_names() 
+transfer_df$team <- factor(transfer_df$team, levels = unique(transfer_df$team), 
+                           labels = c("Manchester City", "Liverpool", "Chelsea", "Tottenham", "Arsenal", "Manchester United",
+                                      "Wolverhampton", "Everton", "Leicester", "West Ham", "Watford", "Crystal Palace", 
+                                      "Newcastle", "Bournemouth", "Burnley", "Southampton", "Brighton", "Cardiff", "Fulham", 
+                                      "Huddersfield"))
+transfer_df = transfer_df |> 
+  select(team, total)
+match_df = match_df  |> 
+  left_join(transfer_df, by = "team") 
+
+match_df|>
+  head(5) |> 
+  knitr::kable()
+```
+
+
