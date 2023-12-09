@@ -25,7 +25,7 @@ As the most popular football league worldwide, the Premier League consists of 20
 ## Motivation 
 
 Statistical inference is commonly used as part of sporting analysis to help the clubs to achieve better game performance. Data scientists can use past data to build models and predict future performance.     
-For our final project, we focused on the Premier League season 2018/19 because it was the season before pandemic and data availability. We are interested in the factors with significant effect on the goal difference (number of goals scored minus goals conceded) for each team by the end of the season so that we might be able to predict team performance for future seasons. Factors including the player's average age, proportion of non-european players, possession rate, passing accuracy, number of yellow cards received, and money spent in the transfer window are being explored based on our data exploration process and existing scientific studies.  	
+For our final project, we intend to explore the factors that affect game performance. We utilized the datasets on the Premier League season 2018/19 because it was the season before pandemic and due to data availability. We are interested in the factors with significant effect on the goal difference (number of goals scored minus goals conceded) for each team by the end of the season so that we might be able to predict team performance for future seasons. Factors including average age of the squad, nationality of the players, possession rate, types of ball passes, number of yellow cards received, and money spent in the transfer window are being explored with our data exploration process and existing scientific studies.  
 
 ## Related Work 
 
@@ -52,9 +52,9 @@ As modern football develops, the role of financial supports gets much more impor
 
 ## Source 1: Match Statistic Summary
 
-The dataset of [match statistics](https://www.kaggle.com/datasets/thesiff/premierleague1819/) was downloaded and read in. It includes different measures of game statistics for 20 teams in Premier League of season 2018-19. Our intended outcome value is `general_goal_difference`, which is measured by the goal scored minus goal conceded. Variables of measure include basic information about the squad, total fouls received, goal stats, attack stats, defense stats, possession rate, and TV revenue. We selected the variables of interest: `general_goal_difference`, `general_won`, `general_squad_average_age`, `attack_posession`, `attack_passes_back`, `attack_passes_long`, `general_card_yellow`.
+The dataset of [match statistics](https://www.kaggle.com/datasets/thesiff/premierleague1819/) was downloaded and read in. It includes different measures of game statistics for 20 teams in Premier League of season 2018-19. Our intended outcome value is `general_goal_difference`, which is measured by the goal scored minus goal conceded. Variables of measure include basic information about the squad, total fouls received, goal stats, attack stats, defense stats, possession rate, and TV revenue. We selected the variables of interest: `general_goal_difference`, `general_squad_average_age`, `attack_posession`, `attack_pass_accuracy`, `general_card_yellow`.
 
-Teams are ordered by the final league position, from 1 to 20. It can be observed that higher ranked teams have positive goal difference, while lower ranked teams have negative goal difference. The seperation between positive and negative goal difference happens about rank 10 so that we decide `general_goal_difference` is an accurate representation of the team performance outcome.
+Teams are ordered by the final league position, from 1 to 20. It can be observed that higher ranked teams have positive goal difference, while lower ranked teams have negative goal difference. The separation between positive and negative goal difference happens about rank 10 so that we decide `general_goal_difference` is an accurate representation of the team performance outcome.
 
 ```{r message=FALSE, warning=FALSE, include=TRUE}
 match_df = read_csv("./data/match_data.csv")|> 
@@ -68,7 +68,7 @@ match_df |>
 
 ## Source 2: Player Statistic (Age)
 
-The dataset of [player statistics](https://fbref.com/en/comps/9/2018-2019/stats/2018-2019-Premier-League-Stats#all_stats_standard) was extracted and read in. Variables of interest are selected, including player's nation, team, age, and total minutes played during the season. Team names are modified so that they match with `match_df`, preparing for further datasets merging. Below shows a couple player entries.
+The dataset of [player statistics](https://fbref.com/en/comps/9/2018-2019/stats/2018-2019-Premier-League-Stats#all_stats_standard) was extracted and read in. Variables of interest were selected, including player's nation, team, age, and total minutes played during the season. Team names were modified so that they match with `match_df`, preparing for further datasets merging. Below shows a couple player entries.
 
 ```{r message=FALSE, warning=FALSE, include=TRUE}
 player_df = read_excel("./data/player_game.xlsx", sheet = 1) |> 
@@ -86,7 +86,7 @@ player_df |>
   knitr::kable() 
 ```
 
-Using `player_df`, we changed the `age` variable to number so that we could calculate the 25th and 75th percentile of age distribution, which is 23 and 29 years old. Then we calculated the proportion of players that belong to the age range of 23 to 29 years old, grouped by 20 different teams. We merged the `ave_age_proportion` variable into `match_df` using `left_join.` Belows shows the result for the top 5 teams.
+Using `player_df`, we changed the `age` variable to number so that we could calculate the 25th and 75th percentile of age distribution, which is 23 and 29 years old. Then we calculated the proportion of players that belong to the age range of 23 to 29 years old, grouped by 20 different teams. We merged the `ave_age_proportion` variable into `match_df` using `left_join.` Below shows the result for the top 5 teams.
 
 
 ```{r message=FALSE, warning=FALSE, include=TRUE}
@@ -115,7 +115,7 @@ match_df|>
 
 ## Source 3: Player Statistic (Country, Region) 
 
-`player_df` has variable `country`, which is where each player comes from. Dataset of [country codes](https://github.com/datasets/country-codes/blob/master/data/country-codes.csv) was downloaded and read in. `country_code_df` is manipulated so that Great Britain is separated into `ENG, NIR, SCO, WAL`. Variables include the country name, country code, and the region that country belongs to. Belows shows 5 entries of cleaned `country_code_df`.
+`player_df` has variable `country`, which is where each player comes from. Dataset of [country codes](https://github.com/datasets/country-codes/blob/master/data/country-codes.csv) was downloaded and read in. `country_code_df` is manipulated so that Great Britain is separated into `ENG, NIR, SCO, WAL`. Variables include the country name, country code, and the region that country belongs to. Below shows 5 entries of cleaned `country_code_df`.
 
 ```{r message=FALSE, warning=FALSE, include=TRUE}
 country_code_df = read.csv("./data/country_codes.csv") |> 
@@ -135,7 +135,7 @@ country_code_df|>
   knitr::kable()
 ```
 
-`player_df` is manipulated so that country origin for each player is saved as a variable. Then the dataset is merged by `country_code_df` and each player has a new variable indicating the region he comes from. Then the proportion of European players is calculated for each team and the variable `europe_player_proportion` is added to `match_df` by merging the datasets. Below shows the result of the dataframe for the top 5 teams. 
+`player_df` is manipulated so that country origin for each player is saved as a variable. Then the dataset is merged with `country_code_df` and each player has a new variable indicating the region he comes from. Then the proportion of European players is calculated for each team and the variable `europe_player_proportion` is added to `match_df` by merging the datasets. Below shows the result of the dataframe for the top 5 teams. 
 
 ```{r message=FALSE, warning=FALSE, include=TRUE}
 player_dist = player_df |>
@@ -432,7 +432,7 @@ With all the exploratory analysis conducted, we hypothesized that average age of
 
 To test our hypothesis, we fitted a full linear model regressing `general_goal_difference` on 7 predictors. Results of the full linear model revealed a significant relationship between `attack_possession` and the outcome, as indicated by a p value below 0.05. Other predictors, however, did not demonstrate statistical significance at significance level of 0.05. Thus, we can observe that tactical approach has much stronger impact compared to other factors. We then fitted a simplified linear model regressing `general_goal_difference` only on factors related to tactics. We found that the tactic model also highlighted attack possession as a significant factor. However, types of passes did not show significance in this model. 
 
-Using cross validation, we assessed prediction accuracy of the prediction models by looking at the boxplots of `rmse` distribution. We found that tactic model generally has a lower `rmse` compared to the full model. The results show that the tactic model potentially provides a more accurate and consistent prediction for `general_goal_difference`, as the `attack_possession` emerged as a pivotal predictor in both models, aligning with our prediction that match style with primary focus on ball possession is a key factor in match outcomes.
+Using cross validation, we assessed prediction accuracy of the prediction models by looking at the boxplots of `rmse` distribution. We found that tactic model generally has a lower `rmse` compared to the full model. The results show that the tactic model potentially provides a more accurate and consistent prediction for `general_goal_difference`, as the `attack_possession` emerged as a pivotal predictor in both models, aligning with our prediction that **match style with primary focus on ball possession is a key factor in match outcomes.**
 
 Even though our model only shows `attack_possession` as a significant factor, we definitely acknowledge the importance of other factors that may failed to be represented in our model. For example, differences between individual players and even off-field factors can cause considerable disparities. This could involve integrating interaction terms or additional predictors to more accurately reflect the complexities inherent in football club performance. More complicated model is needed to conduct a more detailed analysis.
 

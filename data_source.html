@@ -391,7 +391,7 @@ variables of interest: <code>general_goal_difference</code>,
 <code>attack_pass_accuracy</code>, <code>general_card_yellow</code>.</p>
 <p>Teams are ordered by the final league position, from 1 to 20. It can
 be observed that higher ranked teams have positive goal difference,
-while lower ranked teams have negative goal difference. The seperation
+while lower ranked teams have negative goal difference. The separation
 between positive and negative goal difference happens about rank 10 so
 that we decide <code>general_goal_difference</code> is an accurate
 representation of the team performance outcome.</p>
@@ -610,9 +610,9 @@ match_df |&gt;
 <h1><strong>Source 2: Player Statistic (Age)</strong></h1>
 <p>The dataset of <a
 href="https://fbref.com/en/comps/9/2018-2019/stats/2018-2019-Premier-League-Stats#all_stats_standard">player
-statistics</a> was extracted and read in. Variables of interest are
+statistics</a> was extracted and read in. Variables of interest were
 selected, including player’s nation, team, age, and total minutes played
-during the season. Team names are modified so that they match with
+during the season. Team names were modified so that they match with
 <code>match_df</code>, preparing for further datasets merging. Below
 shows a couple player entries.</p>
 <pre class="r"><code>player_df = read_excel(&quot;./data/player_game.xlsx&quot;, sheet = 1) |&gt; 
@@ -676,7 +676,7 @@ percentile of age distribution, which is 23 and 29 years old. Then we
 calculated the proportion of players that belong to the age range of 23
 to 29 years old, grouped by 20 different teams. We merged the
 <code>ave_age_proportion</code> variable into <code>match_df</code>
-using <code>left_join.</code> Belows shows the result for the top 5
+using <code>left_join.</code> Below shows the result for the top 5
 teams.</p>
 <pre class="r"><code>age_player_df = player_df  |&gt; 
  mutate(age = as.numeric(as.character(age))) |&gt; 
@@ -783,9 +783,9 @@ class="section level1">
 where each player comes from. Dataset of <a
 href="https://github.com/datasets/country-codes/blob/master/data/country-codes.csv">country
 codes</a> was downloaded and read in. <code>country_code_df</code> is
-manipulated so that Great Britain is separated into
+manipulated so that the Great Britain is separated into
 <code>ENG, NIR, SCO, WAL</code>. Variables include the country name,
-country code, and the region that country belongs to. Belows shows 5
+country code, and the region that country belongs to. Below shows 5
 entries of cleaned <code>country_code_df</code>.</p>
 <pre class="r"><code>country_code_df = read.csv(&quot;./data/country_codes.csv&quot;) |&gt; 
   janitor::clean_names() |&gt; 
@@ -839,7 +839,7 @@ country_code_df|&gt;
 </tbody>
 </table>
 <p><code>player_df</code> is manipulated so that country origin for each
-player is saved as a variable. Then the dataset is merged by
+player is saved as a variable. Then the dataset is merged with
 <code>country_code_df</code> and each player has a new variable
 indicating the region he comes from. Then the proportion of European
 players is calculated for each team and the variable

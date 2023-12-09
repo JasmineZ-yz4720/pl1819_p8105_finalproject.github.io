@@ -16,7 +16,7 @@ As the most popular football league worldwide, the Premier League consists of 20
 # **Motivation** 
 
 Statistical inference is commonly used as part of sporting analysis to help the clubs to achieve better game performance. Data scientists can use past data to build models and predict future performance.     
-For our final project, we focused on the Premier League season 2018/19 because it was the season before pandemic and data availability. We are interested in the factors with significant effect on the goal difference (number of goals scored minus goals conceded) for each team by the end of the season so that we might be able to predict team performance for future seasons. Factors including the player's average age, proportion of non-european players, possession rate, passing accuracy, number of yellow cards received, and money spent in the transfer window are being explored based on our data exploration process and existing scientific studies.  	
+For our final project, we intend to explore the factors that affect game performance. We utilized the datasets on the Premier League season 2018/19 because it was the season before pandemic and due to data availability. We are interested in the factors with significant effect on the goal difference (number of goals scored minus goals conceded) for each team by the end of the season so that we might be able to predict team performance for future seasons. Factors including average age of the squad, nationality of the players, possession rate, types of ball passes, number of yellow cards received, and money spent in the transfer window are being explored with our data exploration process and existing scientific studies.  	
 
 # **Related Work** 
 

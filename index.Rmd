@@ -1,5 +1,5 @@
 ---
-title: "Premier League 2018-19 Performance Analysis"
+title: "Premier League: Football Performance Analysis"
 output: 
   html_document:
     toc: false
@@ -7,7 +7,8 @@ output:
     theme: lumen
 ---
 
-### Exploration of the relationship between different factors and game performance
+### **Exploration of the relationship between different factors and game performance**
+### Premier League 2018-19 Datasets
 
 ![](pics/mancity_logo.png){align="right" width=12%}
 
