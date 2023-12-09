@@ -33,8 +33,16 @@
 <link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
 <script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
+<script src="site_libs/navigation-1.1/codefolding.js"></script>
 <link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/htmlwidgets-1.6.2/htmlwidgets.js"></script>
+<script src="site_libs/plotly-binding-4.10.3/plotly.js"></script>
+<script src="site_libs/typedarray-0.1/typedarray.min.js"></script>
+<link href="site_libs/crosstalk-1.2.0/css/crosstalk.min.css" rel="stylesheet" />
+<script src="site_libs/crosstalk-1.2.0/js/crosstalk.min.js"></script>
+<link href="site_libs/plotly-htmlwidgets-css-2.11.1/plotly-htmlwidgets.css" rel="stylesheet" />
+<script src="site_libs/plotly-main-2.11.1/plotly-latest.min.js"></script>
 <link href="site_libs/font-awesome-6.4.2/css/all.min.css" rel="stylesheet" />
 <link href="site_libs/font-awesome-6.4.2/css/v4-shims.min.css" rel="stylesheet" />
 
@@ -221,6 +229,9 @@ $(document).ready(function () {
 </style>
 
 <!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
 
 
 
@@ -356,6 +367,14 @@ div.tocify {
 
 <div id="header">
 
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
 
 
 <h1 class="title toc-ignore">Project Report: Performance Analysis of
@@ -365,35 +384,426 @@ Premier League 2018-19</h1>
 
 
 <div id="introduction" class="section level1">
-<h1>Introduction</h1>
+<h1><strong>Introduction</strong></h1>
+<div id="premier-league" class="section level2">
+<h2>Premier League</h2>
+<p>As the most popular football league worldwide, the Premier League
+consists of 20 competitive football clubs in England and attracts some
+of the most talented football players. Each season lasts from August to
+June, with each team playing 38 matches against all other teams (home
+and away). Final standings is determined by points earned throughout the
+season, with 3 points for each win, 1 point for each draw, and 0 point
+for each loss.</p>
 </div>
-<div id="data-sources" class="section level1">
-<h1>Data Sources</h1>
+<div id="motivation" class="section level2">
+<h2>Motivation</h2>
+<p>Statistical inference is commonly used as part of sporting analysis
+to help the clubs to achieve better game performance. Data scientists
+can use past data to build models and predict future performance.<br />
+For our final project, we focused on the Premier League season 2018/19
+because it was the season before pandemic and data availability. We are
+interested in the factors with significant effect on the goal difference
+(number of goals scored minus goals conceded) for each team by the end
+of the season so that we might be able to predict team performance for
+future seasons. Factors including the player’s average age, proportion
+of non-european players, possession rate, passing accuracy, number of
+yellow cards received, and money spent in the transfer window are being
+explored based on our data exploration process and existing scientific
+studies.</p>
 </div>
-<div id="data-manipulation" class="section level1">
-<h1>Data Manipulation</h1>
+<div id="related-work" class="section level2">
+<h2>Related Work</h2>
+<p>As a high performance sports, thousands of scientific studies have
+been conducted to show the deciding effects of some variables on sport
+performance.</p>
+<p>One <a href="https://pubmed.ncbi.nlm.nih.gov/21604225/">article</a>
+examined age and team ranking and player performance and found a
+significant correlation between the relative age effect and success as
+defined by team performance and final ranking.</p>
+<p>Tactic can never be underestimated in a group sport. Since the 1996
+European Cup, technical football, represented by the French team, has
+occupied the mainstream of world football in the past two European
+Championships and World Cups. Technical and tactical techniques and
+tactics are also different, which affects the results of the game at a
+high level. The <a
+href="https://www.researchgate.net/publication/315562890_Analysis_on_the_Effect_of_Attack_Skills_and_Tactics_on_Football_Matches_Scoring_Efficiency">article</a>
+proves the significant impact of passing rate and ball possession rate
+on the outcome of the game.</p>
+<p>As modern football develops, the role of financial supports gets much
+more important compared to the past. Football clubs can spend hundreds
+of millions of Euros to trade players during the transfer window. In
+this <a
+href="https://scholarcommons.sc.edu/cgi/viewcontent.cgi?article=1518&amp;context=senior_theses">study</a>,
+the authors consider the impact of Financial Fair Play regulations and
+team ROI and focus on case studies of Manchester City, Chelsea,
+Leicester City and Newcastle United.</p>
+</div>
+<div id="initial-questions" class="section level2">
+<h2>Initial Questions</h2>
+<ul>
+<li><p>What represents a club’s success?</p></li>
+<li><p>What factors can influence the performance of a football
+club?</p></li>
+<li><p>Will different match styles have significant differences in club
+performance?</p></li>
+<li><p>What impact does the club’s economic situation have on
+performance?</p></li>
+</ul>
+</div>
+</div>
+<div id="data-sources-and-manipulation" class="section level1">
+<h1><strong>Data Sources and Manipulation</strong></h1>
+<div id="source-1-match-statistic-summary" class="section level2">
+<h2>Source 1: Match Statistic Summary</h2>
+<p>The dataset of <a
+href="https://www.kaggle.com/datasets/thesiff/premierleague1819/">match
+statistics</a> was downloaded and read in. It includes different
+measures of game statistics for 20 teams in Premier League of season
+2018-19. Our intended outcome value is
+<code>general_goal_difference</code>, which is measured by the goal
+scored minus goal conceded. Variables of measure include basic
+information about the squad, total fouls received, goal stats, attack
+stats, defense stats, possession rate, and TV revenue. We selected the
+variables of interest: <code>general_goal_difference</code>,
+<code>general_won</code>, <code>general_squad_average_age</code>,
+<code>attack_posession</code>, <code>attack_passes_back</code>,
+<code>attack_passes_long</code>, <code>general_card_yellow</code>.</p>
+<p>Teams are ordered by the final league position, from 1 to 20. It can
+be observed that higher ranked teams have positive goal difference,
+while lower ranked teams have negative goal difference. The seperation
+between positive and negative goal difference happens about rank 10 so
+that we decide <code>general_goal_difference</code> is an accurate
+representation of the team performance outcome.</p>
 <pre class="r"><code>match_df = read_csv(&quot;./data/match_data.csv&quot;)|&gt; 
-  janitor::clean_names()
-transfer_df = read_csv(&quot;./data/transfer.csv&quot;)|&gt; 
-  janitor::clean_names() 
-
-player_df = read_excel(&quot;./data/player_game.xlsx&quot;, sheet = 1) |&gt; 
+  janitor::clean_names() |&gt; 
+  select(team, general_won, general_league_position, general_goal_difference, general_squad_average_age, attack_posession, 
+         attack_passes_back, attack_passes_long, general_card_yellow)
+match_df |&gt; 
+  knitr::kable()</code></pre>
+<table>
+<colgroup>
+<col width="10%" />
+<col width="6%" />
+<col width="13%" />
+<col width="13%" />
+<col width="14%" />
+<col width="9%" />
+<col width="10%" />
+<col width="10%" />
+<col width="11%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">team</th>
+<th align="right">general_won</th>
+<th align="right">general_league_position</th>
+<th align="right">general_goal_difference</th>
+<th align="right">general_squad_average_age</th>
+<th align="right">attack_posession</th>
+<th align="right">attack_passes_back</th>
+<th align="right">attack_passes_long</th>
+<th align="right">general_card_yellow</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Manchester City</td>
+<td align="right">32</td>
+<td align="right">1</td>
+<td align="right">72</td>
+<td align="right">27.1</td>
+<td align="right">64.0</td>
+<td align="right">4240</td>
+<td align="right">1814</td>
+<td align="right">44</td>
+</tr>
+<tr class="even">
+<td align="left">Liverpool</td>
+<td align="right">30</td>
+<td align="right">2</td>
+<td align="right">67</td>
+<td align="right">26.8</td>
+<td align="right">58.8</td>
+<td align="right">3416</td>
+<td align="right">2250</td>
+<td align="right">38</td>
+</tr>
+<tr class="odd">
+<td align="left">Chelsea</td>
+<td align="right">21</td>
+<td align="right">3</td>
+<td align="right">24</td>
+<td align="right">28.1</td>
+<td align="right">59.9</td>
+<td align="right">3874</td>
+<td align="right">1774</td>
+<td align="right">49</td>
+</tr>
+<tr class="even">
+<td align="left">Tottenham</td>
+<td align="right">23</td>
+<td align="right">4</td>
+<td align="right">28</td>
+<td align="right">27.0</td>
+<td align="right">56.7</td>
+<td align="right">3191</td>
+<td align="right">2267</td>
+<td align="right">56</td>
+</tr>
+<tr class="odd">
+<td align="left">Arsenal</td>
+<td align="right">21</td>
+<td align="right">5</td>
+<td align="right">22</td>
+<td align="right">27.5</td>
+<td align="right">56.1</td>
+<td align="right">3102</td>
+<td align="right">2062</td>
+<td align="right">72</td>
+</tr>
+<tr class="even">
+<td align="left">Manchester United</td>
+<td align="right">19</td>
+<td align="right">6</td>
+<td align="right">11</td>
+<td align="right">27.3</td>
+<td align="right">53.3</td>
+<td align="right">2634</td>
+<td align="right">2242</td>
+<td align="right">73</td>
+</tr>
+<tr class="odd">
+<td align="left">Wolverhampton</td>
+<td align="right">16</td>
+<td align="right">7</td>
+<td align="right">1</td>
+<td align="right">27.2</td>
+<td align="right">47.4</td>
+<td align="right">2515</td>
+<td align="right">2552</td>
+<td align="right">72</td>
+</tr>
+<tr class="even">
+<td align="left">Everton</td>
+<td align="right">15</td>
+<td align="right">8</td>
+<td align="right">8</td>
+<td align="right">27.0</td>
+<td align="right">51.0</td>
+<td align="right">2362</td>
+<td align="right">2310</td>
+<td align="right">55</td>
+</tr>
+<tr class="odd">
+<td align="left">Leicester</td>
+<td align="right">15</td>
+<td align="right">9</td>
+<td align="right">3</td>
+<td align="right">29.0</td>
+<td align="right">50.8</td>
+<td align="right">2593</td>
+<td align="right">2335</td>
+<td align="right">57</td>
+</tr>
+<tr class="even">
+<td align="left">West Ham</td>
+<td align="right">15</td>
+<td align="right">10</td>
+<td align="right">-3</td>
+<td align="right">28.3</td>
+<td align="right">49.0</td>
+<td align="right">2273</td>
+<td align="right">2315</td>
+<td align="right">59</td>
+</tr>
+<tr class="odd">
+<td align="left">Watford</td>
+<td align="right">14</td>
+<td align="right">11</td>
+<td align="right">-7</td>
+<td align="right">26.8</td>
+<td align="right">47.4</td>
+<td align="right">2314</td>
+<td align="right">2437</td>
+<td align="right">77</td>
+</tr>
+<tr class="even">
+<td align="left">Crystal Palace</td>
+<td align="right">14</td>
+<td align="right">12</td>
+<td align="right">-2</td>
+<td align="right">26.8</td>
+<td align="right">46.6</td>
+<td align="right">2233</td>
+<td align="right">2259</td>
+<td align="right">58</td>
+</tr>
+<tr class="odd">
+<td align="left">Newcastle</td>
+<td align="right">12</td>
+<td align="right">13</td>
+<td align="right">-6</td>
+<td align="right">26.1</td>
+<td align="right">42.9</td>
+<td align="right">1999</td>
+<td align="right">2680</td>
+<td align="right">57</td>
+</tr>
+<tr class="even">
+<td align="left">Bournemouth</td>
+<td align="right">13</td>
+<td align="right">14</td>
+<td align="right">-14</td>
+<td align="right">26.2</td>
+<td align="right">47.7</td>
+<td align="right">2249</td>
+<td align="right">1932</td>
+<td align="right">60</td>
+</tr>
+<tr class="odd">
+<td align="left">Burnley</td>
+<td align="right">11</td>
+<td align="right">15</td>
+<td align="right">-23</td>
+<td align="right">27.3</td>
+<td align="right">43.4</td>
+<td align="right">2046</td>
+<td align="right">2898</td>
+<td align="right">75</td>
+</tr>
+<tr class="even">
+<td align="left">Southampton</td>
+<td align="right">9</td>
+<td align="right">16</td>
+<td align="right">-20</td>
+<td align="right">28.0</td>
+<td align="right">45.4</td>
+<td align="right">2040</td>
+<td align="right">2394</td>
+<td align="right">71</td>
+</tr>
+<tr class="odd">
+<td align="left">Brighton</td>
+<td align="right">9</td>
+<td align="right">17</td>
+<td align="right">-25</td>
+<td align="right">28.4</td>
+<td align="right">44.1</td>
+<td align="right">2072</td>
+<td align="right">2623</td>
+<td align="right">60</td>
+</tr>
+<tr class="even">
+<td align="left">Cardiff</td>
+<td align="right">10</td>
+<td align="right">18</td>
+<td align="right">-35</td>
+<td align="right">29.7</td>
+<td align="right">39.1</td>
+<td align="right">1418</td>
+<td align="right">2513</td>
+<td align="right">66</td>
+</tr>
+<tr class="odd">
+<td align="left">Fulham</td>
+<td align="right">7</td>
+<td align="right">19</td>
+<td align="right">-47</td>
+<td align="right">26.7</td>
+<td align="right">49.2</td>
+<td align="right">2750</td>
+<td align="right">2417</td>
+<td align="right">68</td>
+</tr>
+<tr class="even">
+<td align="left">Huddersfield</td>
+<td align="right">3</td>
+<td align="right">20</td>
+<td align="right">-54</td>
+<td align="right">28.5</td>
+<td align="right">47.1</td>
+<td align="right">2492</td>
+<td align="right">2603</td>
+<td align="right">55</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="source-2-player-statistic-age" class="section level2">
+<h2>Source 2: Player Statistic (Age)</h2>
+<p>The dataset of <a
+href="https://fbref.com/en/comps/9/2018-2019/stats/2018-2019-Premier-League-Stats#all_stats_standard">player
+statistics</a> was extracted and read in. Variables of interest are
+selected, including player’s nation, team, age, and total minutes played
+during the season. Team names are modified so that they match with
+<code>match_df</code>, preparing for further datasets merging. Below
+shows a couple player entries.</p>
+<pre class="r"><code>player_df = read_excel(&quot;./data/player_game.xlsx&quot;, sheet = 1) |&gt; 
   janitor::clean_names()|&gt;
-  rename(team = squad)
+  rename(team = squad)|&gt; 
+  select(player, nation, team, age)
 player_df$team = gsub(&quot;Manchester Utd&quot;, &quot;Manchester United&quot;, player_df$team)
 player_df$team = gsub(&quot;Newcastle Utd&quot;, &quot;Newcastle&quot;, player_df$team)
 player_df$team = gsub(&quot;Wolves&quot;, &quot;Wolverhampton&quot;, player_df$team)
 player_df$team = gsub(&quot;Cardiff City&quot;, &quot;Cardiff&quot;, player_df$team)
 player_df$team = gsub(&quot;Leicester City&quot;, &quot;Leicester&quot;, player_df$team)
 
-country_code_df = read.csv(&quot;./data/country_codes.csv&quot;) |&gt; 
-  janitor::clean_names() |&gt; 
-  rename(country = fifa) </code></pre>
+player_df |&gt;
+  head(5) |&gt; 
+  knitr::kable() </code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">player</th>
+<th align="left">nation</th>
+<th align="left">team</th>
+<th align="left">age</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Patrick van Aanholt</td>
+<td align="left">nl NED</td>
+<td align="left">Crystal Palace</td>
+<td align="left">27</td>
+</tr>
+<tr class="even">
+<td align="left">Sergio Agüero</td>
+<td align="left">ar ARG</td>
+<td align="left">Manchester City</td>
+<td align="left">30</td>
+</tr>
+<tr class="odd">
+<td align="left">Nathan Aké</td>
+<td align="left">nl NED</td>
+<td align="left">Bournemouth</td>
+<td align="left">23</td>
+</tr>
+<tr class="even">
+<td align="left">Marc Albrighton</td>
+<td align="left">eng ENG</td>
+<td align="left">Leicester</td>
+<td align="left">28</td>
+</tr>
+<tr class="odd">
+<td align="left">Toby Alderweireld</td>
+<td align="left">be BEL</td>
+<td align="left">Tottenham</td>
+<td align="left">29</td>
+</tr>
+</tbody>
+</table>
+<p>Using <code>player_df</code>, we changed the <code>age</code>
+variable to number so that we could calculate the 25th and 75th
+percentile of age distribution, which is 23 and 29 years old. Then we
+calculated the proportion of players that belong to the age range of 23
+to 29 years old, grouped by 20 different teams. We merged the
+<code>ave_age_proportion</code> variable into <code>match_df</code>
+using <code>left_join.</code> Belows shows the result for the top 5
+teams.</p>
 <pre class="r"><code>age_player_df = player_df  |&gt; 
- mutate(age = as.numeric(as.character(age)),
- min = as.numeric(as.character(min)))  |&gt; 
+ mutate(age = as.numeric(as.character(age))) |&gt; 
  na.omit()
-
 q25 &lt;- quantile(age_player_df$age, 0.25)
 q75 &lt;- quantile(age_player_df$age, 0.75)
 
@@ -401,15 +811,123 @@ proportion_age_23_29 &lt;- age_player_df  |&gt;
   group_by(team) |&gt;                       
   summarise(
     total = n(),                           
-    count_23_29 = sum(age &gt;= 23 &amp; age &lt;= 29) 
-  )  |&gt; 
+    count_23_29 = sum(age &gt;= 23 &amp; age &lt;= 29))  |&gt; 
   mutate(proportion = count_23_29 / total)
 
-match_df &lt;- match_df  |&gt; 
+match_df = match_df  |&gt; 
   left_join(proportion_age_23_29, by = &quot;team&quot;)  |&gt; 
   select(-total, -count_23_29)  |&gt; 
-  rename(ave_age_proportion=proportion)</code></pre>
-<pre class="r"><code>GBR_df = country_code_df |&gt; 
+  rename(ave_age_proportion=proportion)
+
+match_df|&gt;
+  head(5) |&gt; 
+  knitr::kable()</code></pre>
+<table>
+<colgroup>
+<col width="8%" />
+<col width="6%" />
+<col width="12%" />
+<col width="12%" />
+<col width="13%" />
+<col width="8%" />
+<col width="9%" />
+<col width="9%" />
+<col width="10%" />
+<col width="9%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">team</th>
+<th align="right">general_won</th>
+<th align="right">general_league_position</th>
+<th align="right">general_goal_difference</th>
+<th align="right">general_squad_average_age</th>
+<th align="right">attack_posession</th>
+<th align="right">attack_passes_back</th>
+<th align="right">attack_passes_long</th>
+<th align="right">general_card_yellow</th>
+<th align="right">ave_age_proportion</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Manchester City</td>
+<td align="right">32</td>
+<td align="right">1</td>
+<td align="right">72</td>
+<td align="right">27.1</td>
+<td align="right">64.0</td>
+<td align="right">4240</td>
+<td align="right">1814</td>
+<td align="right">44</td>
+<td align="right">0.5714286</td>
+</tr>
+<tr class="even">
+<td align="left">Liverpool</td>
+<td align="right">30</td>
+<td align="right">2</td>
+<td align="right">67</td>
+<td align="right">26.8</td>
+<td align="right">58.8</td>
+<td align="right">3416</td>
+<td align="right">2250</td>
+<td align="right">38</td>
+<td align="right">0.7826087</td>
+</tr>
+<tr class="odd">
+<td align="left">Chelsea</td>
+<td align="right">21</td>
+<td align="right">3</td>
+<td align="right">24</td>
+<td align="right">28.1</td>
+<td align="right">59.9</td>
+<td align="right">3874</td>
+<td align="right">1774</td>
+<td align="right">49</td>
+<td align="right">0.5833333</td>
+</tr>
+<tr class="even">
+<td align="left">Tottenham</td>
+<td align="right">23</td>
+<td align="right">4</td>
+<td align="right">28</td>
+<td align="right">27.0</td>
+<td align="right">56.7</td>
+<td align="right">3191</td>
+<td align="right">2267</td>
+<td align="right">56</td>
+<td align="right">0.5714286</td>
+</tr>
+<tr class="odd">
+<td align="left">Arsenal</td>
+<td align="right">21</td>
+<td align="right">5</td>
+<td align="right">22</td>
+<td align="right">27.5</td>
+<td align="right">56.1</td>
+<td align="right">3102</td>
+<td align="right">2062</td>
+<td align="right">72</td>
+<td align="right">0.5000000</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="source-3-player-statistic-country-region"
+class="section level2">
+<h2>Source 3: Player Statistic (Country, Region)</h2>
+<p><code>player_df</code> has variable <code>country</code>, which is
+where each player comes from. Dataset of <a
+href="https://github.com/datasets/country-codes/blob/master/data/country-codes.csv">country
+codes</a> was downloaded and read in. <code>country_code_df</code> is
+manipulated so that Great Britain is separated into
+<code>ENG, NIR, SCO, WAL</code>. Variables include the country name,
+country code, and the region that country belongs to. Belows shows 5
+entries of cleaned <code>country_code_df</code>.</p>
+<pre class="r"><code>country_code_df = read.csv(&quot;./data/country_codes.csv&quot;) |&gt; 
+  janitor::clean_names() |&gt; 
+  rename(country = fifa) 
+GBR_df = country_code_df |&gt; 
   filter(country == &quot;ENG,NIR,SCO,WAL&quot;) 
 GBR_df = data.frame(country = unlist(strsplit(as.character(GBR_df$country), &quot;,&quot;)),
                     official_name_en = GBR_df$official_name_en,
@@ -418,12 +936,65 @@ country_code_df = country_code_df |&gt;
   select(country, official_name_en, region_name) |&gt; 
   bind_rows(GBR_df)
 
-player_dist = player_df |&gt;
+country_code_df|&gt;
+  head(5) |&gt; 
+  knitr::kable()</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">country</th>
+<th align="left">official_name_en</th>
+<th align="left">region_name</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">TPE</td>
+<td align="left"></td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">AFG</td>
+<td align="left">Afghanistan</td>
+<td align="left">Asia</td>
+</tr>
+<tr class="odd">
+<td align="left">ALB</td>
+<td align="left">Albania</td>
+<td align="left">Europe</td>
+</tr>
+<tr class="even">
+<td align="left">ALG</td>
+<td align="left">Algeria</td>
+<td align="left">Africa</td>
+</tr>
+<tr class="odd">
+<td align="left">ASA</td>
+<td align="left">American Samoa</td>
+<td align="left">Oceania</td>
+</tr>
+</tbody>
+</table>
+<p><code>player_df</code> is manipulated so that country origin for each
+player is saved as a variable. Then the dataset is merged by
+<code>country_code_df</code> and each player has a new variable
+indicating the region he comes from. Then the proportion of European
+players is calculated for each team and the variable
+<code>europe_player_proportion</code> is added to <code>match_df</code>
+by merging the datasets. Below shows the result of the dataframe for the
+top 5 teams.</p>
+<pre class="r"><code>player_dist = player_df |&gt;
   separate(nation, into = c(&quot;country_abbre&quot;, &quot;country&quot;), convert = TRUE) |&gt; 
   select(country, player, team) |&gt; 
   left_join(x = _, y = country_code_df) |&gt; 
-  drop_na()</code></pre>
-<pre class="r"><code>player_region = player_dist |&gt;
+  drop_na()
+player_dist$team &lt;- factor(player_dist$team, levels = unique(player_dist$team), 
+                           labels = c(&quot;Manchester City&quot;, &quot;Liverpool&quot;, &quot;Chelsea&quot;, &quot;Tottenham&quot;, &quot;Arsenal&quot;, &quot;Manchester United&quot;,
+                                      &quot;Wolverhampton&quot;, &quot;Everton&quot;, &quot;Leicester&quot;, &quot;West Ham&quot;, &quot;Watford&quot;, &quot;Crystal Palace&quot;, 
+                                      &quot;Newcastle&quot;, &quot;Bournemouth&quot;, &quot;Burnley&quot;, &quot;Southampton&quot;, &quot;Brighton&quot;, &quot;Cardiff&quot;, &quot;Fulham&quot;, 
+                                      &quot;Huddersfield&quot;))
+
+player_region = player_dist |&gt;
   group_by(team) |&gt;                       
   summarise(
     total = n()) 
@@ -435,20 +1006,642 @@ player_europe = player_dist |&gt;
   left_join(x = _, y = player_region) |&gt; 
   mutate(proportion = n_europe/total)
 
-match_df &lt;- match_df  |&gt; 
+match_df = match_df  |&gt; 
   left_join(player_europe, by = &quot;team&quot;)  |&gt; 
   select(-total, -n_europe)  |&gt; 
-  rename(europe_player_proportion = proportion)</code></pre>
-<pre class="r"><code>transfer_df$team &lt;- factor(transfer_df$team, levels = unique(transfer_df$team), 
-                           labels = c(&quot;Manchester City&quot;, &quot;Manchester United&quot;, &quot;Tottenham&quot;,&quot;Liverpool&quot;, &quot;Chelsea&quot;, &quot;Arsenal&quot;, &quot;Burnley&quot;, &quot;Everton&quot;, &quot;Leicester&quot;, &quot;Newcastle&quot;, &quot;Crystal Palace&quot;, &quot;Bournemouth&quot;, &quot;West Ham&quot;, &quot;Watford&quot;, &quot;Brighton&quot;, &quot;Huddersfield&quot;, &quot;Southampton&quot;, &quot;Wolverhampton&quot;, &quot;Cardiff&quot;, &quot;Fulham&quot;))</code></pre>
-<pre class="r"><code>match_df &lt;- merge(match_df, transfer_df, by = &quot;team&quot;)
-match_df &lt;- match_df[order(match_df$general_league_position), ] </code></pre>
+  rename(europe_player_proportion = proportion)
+match_df|&gt;
+  head(5) |&gt; 
+  knitr::kable()</code></pre>
+<table style="width:100%;">
+<colgroup>
+<col width="7%" />
+<col width="5%" />
+<col width="10%" />
+<col width="10%" />
+<col width="11%" />
+<col width="7%" />
+<col width="8%" />
+<col width="8%" />
+<col width="9%" />
+<col width="8%" />
+<col width="11%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">team</th>
+<th align="right">general_won</th>
+<th align="right">general_league_position</th>
+<th align="right">general_goal_difference</th>
+<th align="right">general_squad_average_age</th>
+<th align="right">attack_posession</th>
+<th align="right">attack_passes_back</th>
+<th align="right">attack_passes_long</th>
+<th align="right">general_card_yellow</th>
+<th align="right">ave_age_proportion</th>
+<th align="right">europe_player_proportion</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Manchester City</td>
+<td align="right">32</td>
+<td align="right">1</td>
+<td align="right">72</td>
+<td align="right">27.1</td>
+<td align="right">64.0</td>
+<td align="right">4240</td>
+<td align="right">1814</td>
+<td align="right">44</td>
+<td align="right">0.5714286</td>
+<td align="right">0.7307692</td>
+</tr>
+<tr class="even">
+<td align="left">Liverpool</td>
+<td align="right">30</td>
+<td align="right">2</td>
+<td align="right">67</td>
+<td align="right">26.8</td>
+<td align="right">58.8</td>
+<td align="right">3416</td>
+<td align="right">2250</td>
+<td align="right">38</td>
+<td align="right">0.7826087</td>
+<td align="right">0.6666667</td>
+</tr>
+<tr class="odd">
+<td align="left">Chelsea</td>
+<td align="right">21</td>
+<td align="right">3</td>
+<td align="right">24</td>
+<td align="right">28.1</td>
+<td align="right">59.9</td>
+<td align="right">3874</td>
+<td align="right">1774</td>
+<td align="right">49</td>
+<td align="right">0.5833333</td>
+<td align="right">0.9285714</td>
+</tr>
+<tr class="even">
+<td align="left">Tottenham</td>
+<td align="right">23</td>
+<td align="right">4</td>
+<td align="right">28</td>
+<td align="right">27.0</td>
+<td align="right">56.7</td>
+<td align="right">3191</td>
+<td align="right">2267</td>
+<td align="right">56</td>
+<td align="right">0.5714286</td>
+<td align="right">0.6000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Arsenal</td>
+<td align="right">21</td>
+<td align="right">5</td>
+<td align="right">22</td>
+<td align="right">27.5</td>
+<td align="right">56.1</td>
+<td align="right">3102</td>
+<td align="right">2062</td>
+<td align="right">72</td>
+<td align="right">0.5000000</td>
+<td align="right">0.6785714</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="source-4-transfer-market-spending" class="section level2">
+<h2>Source 4: Transfer Market Spending</h2>
+<p>The dataset of <a
+href="https://www.kaggle.com/datasets/thesiff/premierleague1819/">spending
+in the transfer market</a> is downloaded and read in.
+<code>transfer_df</code> includes variables indicating net spending for
+each year from 2009 to 2019, and the total net spending over the past
+decade. We are interested in exploring the relationship between total
+net spending and team performance so these two variables are selected
+and merged into <code>match_df</code> for analysis. Below shows the
+result of our final cleaned <code>match_df</code> for top 5 teams.</p>
+<pre class="r"><code>transfer_df = read_csv(&quot;./data/transfer.csv&quot;)|&gt; 
+  janitor::clean_names() 
+transfer_df$team &lt;- factor(transfer_df$team, levels = unique(transfer_df$team), 
+                           labels = c(&quot;Manchester City&quot;, &quot;Liverpool&quot;, &quot;Chelsea&quot;, &quot;Tottenham&quot;, &quot;Arsenal&quot;, &quot;Manchester United&quot;,
+                                      &quot;Wolverhampton&quot;, &quot;Everton&quot;, &quot;Leicester&quot;, &quot;West Ham&quot;, &quot;Watford&quot;, &quot;Crystal Palace&quot;, 
+                                      &quot;Newcastle&quot;, &quot;Bournemouth&quot;, &quot;Burnley&quot;, &quot;Southampton&quot;, &quot;Brighton&quot;, &quot;Cardiff&quot;, &quot;Fulham&quot;, 
+                                      &quot;Huddersfield&quot;))
+transfer_df = transfer_df |&gt; 
+  select(team, total)
+match_df = match_df  |&gt; 
+  left_join(transfer_df, by = &quot;team&quot;) 
+
+match_df|&gt;
+  head(5) |&gt; 
+  knitr::kable()</code></pre>
+<table>
+<colgroup>
+<col width="6%" />
+<col width="5%" />
+<col width="10%" />
+<col width="10%" />
+<col width="11%" />
+<col width="7%" />
+<col width="8%" />
+<col width="8%" />
+<col width="8%" />
+<col width="8%" />
+<col width="10%" />
+<col width="3%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">team</th>
+<th align="right">general_won</th>
+<th align="right">general_league_position</th>
+<th align="right">general_goal_difference</th>
+<th align="right">general_squad_average_age</th>
+<th align="right">attack_posession</th>
+<th align="right">attack_passes_back</th>
+<th align="right">attack_passes_long</th>
+<th align="right">general_card_yellow</th>
+<th align="right">ave_age_proportion</th>
+<th align="right">europe_player_proportion</th>
+<th align="right">total</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Manchester City</td>
+<td align="right">32</td>
+<td align="right">1</td>
+<td align="right">72</td>
+<td align="right">27.1</td>
+<td align="right">64.0</td>
+<td align="right">4240</td>
+<td align="right">1814</td>
+<td align="right">44</td>
+<td align="right">0.5714286</td>
+<td align="right">0.7307692</td>
+<td align="right">-1070.83</td>
+</tr>
+<tr class="even">
+<td align="left">Liverpool</td>
+<td align="right">30</td>
+<td align="right">2</td>
+<td align="right">67</td>
+<td align="right">26.8</td>
+<td align="right">58.8</td>
+<td align="right">3416</td>
+<td align="right">2250</td>
+<td align="right">38</td>
+<td align="right">0.7826087</td>
+<td align="right">0.6666667</td>
+<td align="right">-666.55</td>
+</tr>
+<tr class="odd">
+<td align="left">Chelsea</td>
+<td align="right">21</td>
+<td align="right">3</td>
+<td align="right">24</td>
+<td align="right">28.1</td>
+<td align="right">59.9</td>
+<td align="right">3874</td>
+<td align="right">1774</td>
+<td align="right">49</td>
+<td align="right">0.5833333</td>
+<td align="right">0.9285714</td>
+<td align="right">-16.78</td>
+</tr>
+<tr class="even">
+<td align="left">Tottenham</td>
+<td align="right">23</td>
+<td align="right">4</td>
+<td align="right">28</td>
+<td align="right">27.0</td>
+<td align="right">56.7</td>
+<td align="right">3191</td>
+<td align="right">2267</td>
+<td align="right">56</td>
+<td align="right">0.5714286</td>
+<td align="right">0.6000000</td>
+<td align="right">-324.86</td>
+</tr>
+<tr class="odd">
+<td align="left">Arsenal</td>
+<td align="right">21</td>
+<td align="right">5</td>
+<td align="right">22</td>
+<td align="right">27.5</td>
+<td align="right">56.1</td>
+<td align="right">3102</td>
+<td align="right">2062</td>
+<td align="right">72</td>
+<td align="right">0.5000000</td>
+<td align="right">0.6785714</td>
+<td align="right">-560.93</td>
+</tr>
+</tbody>
+</table>
+</div>
 </div>
 <div id="exploratory-analysis" class="section level1">
-<h1>Exploratory Analysis</h1>
+<h1><strong>Exploratory Analysis</strong></h1>
+<div id="player-distribution" class="section level2">
+<h2>Player Distribution</h2>
+<div id="player-distribution-by-region" class="section level3">
+<h3>Player Distribution by Region</h3>
+<pre class="r"><code>player_dist |&gt; 
+  ggplot() + geom_bar(aes(x = region_name)) +
+  labs(title = &quot;PL Players by World Region&quot;, 
+       x = &quot;Region of the World&quot;,
+       y = &quot;Count of Players&quot;)+ 
+  scale_fill_viridis_d(option = &quot;viridis&quot;)</code></pre>
+<p><img src="project_report_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
+<p>The bar plot shows the distribution of Premier League football
+players origin, with categories of 5 regions of the world. From the
+plot, it can be observed that most of the players are from Europe. Since
+Premier League takes place in England, which is part of Europe, there
+might be an association between players origin and performance in the
+club.</p>
+</div>
+<div id="player-distribution-of-20-teams" class="section level3">
+<h3>Player Distribution of 20 Teams</h3>
+<pre class="r"><code>player_dist |&gt;
+  count(region_name, team) |&gt; 
+  plot_ly(data = _,
+        x = ~ team,
+        y = ~ n,
+        color = ~ region_name,
+        colors = &quot;Set2&quot;)  |&gt; 
+  add_markers(text = ~paste0(&#39;Football Club: &#39;, team,
+                      &#39;&lt;/br&gt;World Region: &#39;, region_name,
+                      &#39;&lt;br&gt;Number in region: &#39;, n),
+        hoverinfo = &quot;text&quot;)  |&gt; 
+  layout(showlegend = TRUE,
+         title = &quot;Player Distribution by Football Club&quot;,
+         xaxis = list(title = &quot;FC&quot;),
+         yaxis = list(title = &quot;Number of Player by World Region&quot;))</code></pre>
+<div class="plotly html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-594b8ccfce881be570ce" style="width:672px;height:480px;"></div>
+<script type="application/json" data-for="htmlwidget-594b8ccfce881be570ce">{"x":{"visdat":{"6f5f6b5dfff0":["function () ","plotlyVisDat"]},"cur_data":"6f5f6b5dfff0","attrs":{"6f5f6b5dfff0":{"x":{},"y":{},"color":{},"colors":"Set2","alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"scatter","mode":"markers","text":{},"hoverinfo":"text","inherit":true}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"showlegend":true,"title":"Player Distribution by Football Club","xaxis":{"domain":[0,1],"automargin":true,"title":"FC","type":"category","categoryorder":"array","categoryarray":["Manchester City","Liverpool","Chelsea","Tottenham","Arsenal","Manchester United","Wolverhampton","Everton","Leicester","West Ham","Watford","Crystal Palace","Newcastle","Bournemouth","Burnley","Southampton","Brighton","Cardiff","Fulham","Huddersfield"]},"yaxis":{"domain":[0,1],"automargin":true,"title":"Number of Player by World Region"},"hovermode":"closest"},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"data":[{"x":["Manchester City","Liverpool","Tottenham","Arsenal","Manchester United","Wolverhampton","Everton","Leicester","West Ham","Watford","Crystal Palace","Newcastle","Bournemouth","Burnley","Southampton","Cardiff","Fulham","Huddersfield"],"y":[6,1,6,3,4,2,1,2,3,2,3,3,7,1,3,3,4,3],"type":"scatter","mode":"markers","text":["Football Club: Manchester City<\/br>World Region: Africa<br>Number in region: 6","Football Club: Liverpool<\/br>World Region: Africa<br>Number in region: 1","Football Club: Tottenham<\/br>World Region: Africa<br>Number in region: 6","Football Club: Arsenal<\/br>World Region: Africa<br>Number in region: 3","Football Club: Manchester United<\/br>World Region: Africa<br>Number in region: 4","Football Club: Wolverhampton<\/br>World Region: Africa<br>Number in region: 2","Football Club: Everton<\/br>World Region: Africa<br>Number in region: 1","Football Club: Leicester<\/br>World Region: Africa<br>Number in region: 2","Football Club: West Ham<\/br>World Region: Africa<br>Number in region: 3","Football Club: Watford<\/br>World Region: Africa<br>Number in region: 2","Football Club: Crystal Palace<\/br>World Region: Africa<br>Number in region: 3","Football Club: Newcastle<\/br>World Region: Africa<br>Number in region: 3","Football Club: Bournemouth<\/br>World Region: Africa<br>Number in region: 7","Football Club: Burnley<\/br>World Region: Africa<br>Number in region: 1","Football Club: Southampton<\/br>World Region: Africa<br>Number in region: 3","Football Club: Cardiff<\/br>World Region: Africa<br>Number in region: 3","Football Club: Fulham<\/br>World Region: Africa<br>Number in region: 4","Football Club: Huddersfield<\/br>World Region: Africa<br>Number in region: 3"],"hoverinfo":["text","text","text","text","text","text","text","text","text","text","text","text","text","text","text","text","text","text"],"name":"Africa","marker":{"color":"rgba(102,194,165,1)","line":{"color":"rgba(102,194,165,1)"}},"textfont":{"color":"rgba(102,194,165,1)"},"error_y":{"color":"rgba(102,194,165,1)"},"error_x":{"color":"rgba(102,194,165,1)"},"line":{"color":"rgba(102,194,165,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Manchester City","Liverpool","Chelsea","Tottenham","Arsenal","Manchester United","Wolverhampton","Everton","Leicester","West Ham","Crystal Palace","Newcastle","Bournemouth","Burnley","Southampton","Cardiff","Fulham","Huddersfield"],"y":[1,6,2,2,5,3,5,4,7,2,3,1,2,5,3,2,1,4],"type":"scatter","mode":"markers","text":["Football Club: Manchester City<\/br>World Region: Americas<br>Number in region: 1","Football Club: Liverpool<\/br>World Region: Americas<br>Number in region: 6","Football Club: Chelsea<\/br>World Region: Americas<br>Number in region: 2","Football Club: Tottenham<\/br>World Region: Americas<br>Number in region: 2","Football Club: Arsenal<\/br>World Region: Americas<br>Number in region: 5","Football Club: Manchester United<\/br>World Region: Americas<br>Number in region: 3","Football Club: Wolverhampton<\/br>World Region: Americas<br>Number in region: 5","Football Club: Everton<\/br>World Region: Americas<br>Number in region: 4","Football Club: Leicester<\/br>World Region: Americas<br>Number in region: 7","Football Club: West Ham<\/br>World Region: Americas<br>Number in region: 2","Football Club: Crystal Palace<\/br>World Region: Americas<br>Number in region: 3","Football Club: Newcastle<\/br>World Region: Americas<br>Number in region: 1","Football Club: Bournemouth<\/br>World Region: Americas<br>Number in region: 2","Football Club: Burnley<\/br>World Region: Americas<br>Number in region: 5","Football Club: Southampton<\/br>World Region: Americas<br>Number in region: 3","Football Club: Cardiff<\/br>World Region: Americas<br>Number in region: 2","Football Club: Fulham<\/br>World Region: Americas<br>Number in region: 1","Football Club: Huddersfield<\/br>World Region: Americas<br>Number in region: 4"],"hoverinfo":["text","text","text","text","text","text","text","text","text","text","text","text","text","text","text","text","text","text"],"name":"Americas","marker":{"color":"rgba(252,141,98,1)","line":{"color":"rgba(252,141,98,1)"}},"textfont":{"color":"rgba(252,141,98,1)"},"error_y":{"color":"rgba(252,141,98,1)"},"error_x":{"color":"rgba(252,141,98,1)"},"line":{"color":"rgba(252,141,98,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Tottenham","Arsenal","Wolverhampton","West Ham","Watford","Crystal Palace","Newcastle","Southampton"],"y":[2,1,2,2,1,1,1,1],"type":"scatter","mode":"markers","text":["Football Club: Tottenham<\/br>World Region: Asia<br>Number in region: 2","Football Club: Arsenal<\/br>World Region: Asia<br>Number in region: 1","Football Club: Wolverhampton<\/br>World Region: Asia<br>Number in region: 2","Football Club: West Ham<\/br>World Region: Asia<br>Number in region: 2","Football Club: Watford<\/br>World Region: Asia<br>Number in region: 1","Football Club: Crystal Palace<\/br>World Region: Asia<br>Number in region: 1","Football Club: Newcastle<\/br>World Region: Asia<br>Number in region: 1","Football Club: Southampton<\/br>World Region: Asia<br>Number in region: 1"],"hoverinfo":["text","text","text","text","text","text","text","text"],"name":"Asia","marker":{"color":"rgba(141,160,203,1)","line":{"color":"rgba(141,160,203,1)"}},"textfont":{"color":"rgba(141,160,203,1)"},"error_y":{"color":"rgba(141,160,203,1)"},"error_x":{"color":"rgba(141,160,203,1)"},"line":{"color":"rgba(141,160,203,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Manchester City","Liverpool","Chelsea","Tottenham","Arsenal","Manchester United","Wolverhampton","Everton","Leicester","West Ham","Watford","Crystal Palace","Newcastle","Bournemouth","Burnley","Southampton","Brighton","Cardiff","Fulham","Huddersfield"],"y":[19,14,26,15,19,16,15,19,16,13,27,17,23,19,22,16,22,16,23,18],"type":"scatter","mode":"markers","text":["Football Club: Manchester City<\/br>World Region: Europe<br>Number in region: 19","Football Club: Liverpool<\/br>World Region: Europe<br>Number in region: 14","Football Club: Chelsea<\/br>World Region: Europe<br>Number in region: 26","Football Club: Tottenham<\/br>World Region: Europe<br>Number in region: 15","Football Club: Arsenal<\/br>World Region: Europe<br>Number in region: 19","Football Club: Manchester United<\/br>World Region: Europe<br>Number in region: 16","Football Club: Wolverhampton<\/br>World Region: Europe<br>Number in region: 15","Football Club: Everton<\/br>World Region: Europe<br>Number in region: 19","Football Club: Leicester<\/br>World Region: Europe<br>Number in region: 16","Football Club: West Ham<\/br>World Region: Europe<br>Number in region: 13","Football Club: Watford<\/br>World Region: Europe<br>Number in region: 27","Football Club: Crystal Palace<\/br>World Region: Europe<br>Number in region: 17","Football Club: Newcastle<\/br>World Region: Europe<br>Number in region: 23","Football Club: Bournemouth<\/br>World Region: Europe<br>Number in region: 19","Football Club: Burnley<\/br>World Region: Europe<br>Number in region: 22","Football Club: Southampton<\/br>World Region: Europe<br>Number in region: 16","Football Club: Brighton<\/br>World Region: Europe<br>Number in region: 22","Football Club: Cardiff<\/br>World Region: Europe<br>Number in region: 16","Football Club: Fulham<\/br>World Region: Europe<br>Number in region: 23","Football Club: Huddersfield<\/br>World Region: Europe<br>Number in region: 18"],"hoverinfo":["text","text","text","text","text","text","text","text","text","text","text","text","text","text","text","text","text","text","text","text"],"name":"Europe","marker":{"color":"rgba(231,138,195,1)","line":{"color":"rgba(231,138,195,1)"}},"textfont":{"color":"rgba(231,138,195,1)"},"error_y":{"color":"rgba(231,138,195,1)"},"error_x":{"color":"rgba(231,138,195,1)"},"line":{"color":"rgba(231,138,195,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["West Ham","Brighton","Fulham"],"y":[1,1,1],"type":"scatter","mode":"markers","text":["Football Club: West Ham<\/br>World Region: Oceania<br>Number in region: 1","Football Club: Brighton<\/br>World Region: Oceania<br>Number in region: 1","Football Club: Fulham<\/br>World Region: Oceania<br>Number in region: 1"],"hoverinfo":["text","text","text"],"name":"Oceania","marker":{"color":"rgba(166,216,84,1)","line":{"color":"rgba(166,216,84,1)"}},"textfont":{"color":"rgba(166,216,84,1)"},"error_y":{"color":"rgba(166,216,84,1)"},"error_x":{"color":"rgba(166,216,84,1)"},"line":{"color":"rgba(166,216,84,1)"},"xaxis":"x","yaxis":"y","frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+<p>We further look at the distribution of player origin of the 20 teams.
+Using this plot, we can visualize how proportion of players by region
+origin change from team to team, ordered by the final rank by the end of
+the season. In the Premier League, there is a law regarding the limit of
+players without an European nationality. Thus, we intend to explore the
+relationship between proportion of non-European players and performance
+of the club.</p>
+</div>
+</div>
+<div id="tactic-match-style-of-play" class="section level2">
+<h2>Tactic: Match Style of Play</h2>
+<div id="possession-rate" class="section level3">
+<h3>Possession Rate</h3>
+<pre class="r"><code>possession_plot = match_df |&gt; 
+  plot_ly(data = _, x = ~ attack_posession, y = ~ general_goal_difference,
+              type = &#39;scatter&#39;, mode = &#39;markers&#39;, text = ~team, 
+              marker = list(size = 10, color = ~ general_goal_difference, 
+                            colorbar = list(title = &#39;Goal Difference&#39;), 
+                            colorscale = &#39;turbo&#39;)) |&gt;
+      layout(title = &#39;Goal Difference vs. Match Style&#39;,
+             xaxis = list(title = &#39;Possession Rate&#39;),
+             yaxis = list(title = &#39;Goal Difference&#39;)) 
+possession_plot</code></pre>
+<div class="plotly html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-5061f0fcc24acc5c1e36" style="width:672px;height:480px;"></div>
+<script type="application/json" data-for="htmlwidget-5061f0fcc24acc5c1e36">{"x":{"visdat":{"6f5f6039c386":["function () ","plotlyVisDat"]},"cur_data":"6f5f6039c386","attrs":{"6f5f6039c386":{"x":{},"y":{},"mode":"markers","text":{},"marker":{"size":10,"color":{},"colorbar":{"title":"Goal Difference"},"colorscale":"turbo"},"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"scatter"}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"title":"Goal Difference vs. Match Style","xaxis":{"domain":[0,1],"automargin":true,"title":"Possession Rate"},"yaxis":{"domain":[0,1],"automargin":true,"title":"Goal Difference"},"hovermode":"closest","showlegend":false},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"data":[{"x":[64,58.799999999999997,59.899999999999999,56.700000000000003,56.100000000000001,53.299999999999997,47.399999999999999,51,50.799999999999997,49,47.399999999999999,46.600000000000001,42.899999999999999,47.700000000000003,43.399999999999999,45.399999999999999,44.100000000000001,39.100000000000001,49.200000000000003,47.100000000000001],"y":[72,67,24,28,22,11,1,8,3,-3,-7,-2,-6,-14,-23,-20,-25,-35,-47,-54],"mode":"markers","text":["Manchester City","Liverpool","Chelsea","Tottenham","Arsenal","Manchester United","Wolverhampton","Everton","Leicester","West Ham","Watford","Crystal Palace","Newcastle","Bournemouth","Burnley","Southampton","Brighton","Cardiff","Fulham","Huddersfield"],"marker":{"color":[72,67,24,28,22,11,1,8,3,-3,-7,-2,-6,-14,-23,-20,-25,-35,-47,-54],"size":10,"colorbar":{"title":"Goal Difference"},"colorscale":"turbo","line":{"color":"rgba(31,119,180,1)"}},"type":"scatter","error_y":{"color":"rgba(31,119,180,1)"},"error_x":{"color":"rgba(31,119,180,1)"},"line":{"color":"rgba(31,119,180,1)"},"xaxis":"x","yaxis":"y","frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+<pre class="r"><code>lm(general_goal_difference ~ attack_posession, data = match_df) |&gt; 
+  broom::tidy() |&gt; 
+  knitr::kable(digits = 3)</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-210.937</td>
+<td align="right">33.336</td>
+<td align="right">-6.328</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">attack_posession</td>
+<td align="right">4.219</td>
+<td align="right">0.662</td>
+<td align="right">6.376</td>
+<td align="right">0</td>
+</tr>
+</tbody>
+</table>
+<p>The scatter plot shows the relationship between possession rate and
+goal difference. We can observe that teams with a higher attack
+possession percentage tend to have more goal scored than conceded,
+indicating a potential correlation between controlling the game and
+league success.</p>
+</div>
+<div id="long-pass-vs.-short-pass" class="section level3">
+<h3>Long Pass vs. Short Pass</h3>
+<pre class="r"><code>pass_plot = match_df |&gt; 
+  plot_ly(data = _ , x = ~ attack_passes_long, y = ~ attack_passes_back,
+              type = &#39;scatter&#39;, mode = &#39;markers&#39;, 
+              text = ~paste(team, general_goal_difference), 
+              marker = list(size = ~ general_won, color = ~ general_goal_difference, 
+                            colorbar = list(title = &#39;Goal Difference&#39;),
+                            colorscale = &#39;turbo&#39;)) |&gt;
+      layout(title = &#39;Long Pass vs Short Pass&#39;,
+             xaxis = list(title = &#39;Long Pass&#39;),
+             yaxis = list(title = &#39;Short Pass&#39;))
+pass_plot</code></pre>
+<div class="plotly html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-b67234ce65d5fc09b346" style="width:672px;height:480px;"></div>
+<script type="application/json" data-for="htmlwidget-b67234ce65d5fc09b346">{"x":{"visdat":{"6f5fb59b279":["function () ","plotlyVisDat"]},"cur_data":"6f5fb59b279","attrs":{"6f5fb59b279":{"x":{},"y":{},"mode":"markers","text":{},"marker":{"size":{},"color":{},"colorbar":{"title":"Goal Difference"},"colorscale":"turbo"},"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"scatter"}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"title":"Long Pass vs Short Pass","xaxis":{"domain":[0,1],"automargin":true,"title":"Long Pass"},"yaxis":{"domain":[0,1],"automargin":true,"title":"Short Pass"},"hovermode":"closest","showlegend":false},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"data":[{"x":[1814,2250,1774,2267,2062,2242,2552,2310,2335,2315,2437,2259,2680,1932,2898,2394,2623,2513,2417,2603],"y":[4240,3416,3874,3191,3102,2634,2515,2362,2593,2273,2314,2233,1999,2249,2046,2040,2072,1418,2750,2492],"mode":"markers","text":["Manchester City 72","Liverpool 67","Chelsea 24","Tottenham 28","Arsenal 22","Manchester United 11","Wolverhampton 1","Everton 8","Leicester 3","West Ham -3","Watford -7","Crystal Palace -2","Newcastle -6","Bournemouth -14","Burnley -23","Southampton -20","Brighton -25","Cardiff -35","Fulham -47","Huddersfield -54"],"marker":{"color":[72,67,24,28,22,11,1,8,3,-3,-7,-2,-6,-14,-23,-20,-25,-35,-47,-54],"size":[32,30,21,23,21,19,16,15,15,15,14,14,12,13,11,9,9,10,7,3],"colorbar":{"title":"Goal Difference"},"colorscale":"turbo","line":{"color":"rgba(31,119,180,1)"}},"type":"scatter","error_y":{"color":"rgba(31,119,180,1)"},"error_x":{"color":"rgba(31,119,180,1)"},"line":{"color":"rgba(31,119,180,1)"},"xaxis":"x","yaxis":"y","frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+<p>This plot compares the number of long passes to short passes for each
+team, with the size of each point representing the number of games won
+and the color gradient representing general goal difference. We can
+observe that teams that score more goals tend to have more short passes
+while teams that score less goals tend to have more long passes. Passing
+style greatly defines match tactic, with short pass indicating better
+ball control and cooperation among the team. We find it interesting to
+examine team tactics through match data.</p>
+</div>
+<div id="fouls-received-yellow-card-count" class="section level3">
+<h3>Fouls Received: Yellow Card Count</h3>
+<pre class="r"><code>match_df$team &lt;- factor(match_df$team, levels = unique(match_df$team), 
+                           labels = c(&quot;Manchester City&quot;, &quot;Liverpool&quot;, &quot;Chelsea&quot;, &quot;Tottenham&quot;, &quot;Arsenal&quot;, &quot;Manchester United&quot;,
+                                      &quot;Wolverhampton&quot;, &quot;Everton&quot;, &quot;Leicester&quot;, &quot;West Ham&quot;, &quot;Watford&quot;, &quot;Crystal Palace&quot;, 
+                                      &quot;Newcastle&quot;, &quot;Bournemouth&quot;, &quot;Burnley&quot;, &quot;Southampton&quot;, &quot;Brighton&quot;, &quot;Cardiff&quot;, &quot;Fulham&quot;, 
+                                      &quot;Huddersfield&quot;))
+yellowcard_plot = plot_ly(match_df, 
+        x = ~ team, 
+        y = ~ general_card_yellow, 
+        type = &quot;bar&quot;, 
+        color = ~ team,
+        colors = &#39;viridis&#39;) |&gt;
+  layout(yaxis = list(title = &#39;Total Yellow Card Received&#39;),
+         xaxis = list(title = &#39;Team&#39;),
+         title = &#39;Total Yellow Card Received by Team&#39;)
+yellowcard_plot</code></pre>
+<div class="plotly html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-e60324da43435f1c8d2d" style="width:672px;height:480px;"></div>
+<script type="application/json" data-for="htmlwidget-e60324da43435f1c8d2d">{"x":{"visdat":{"6f5f4484a368":["function () ","plotlyVisDat"]},"cur_data":"6f5f4484a368","attrs":{"6f5f4484a368":{"x":{},"y":{},"color":{},"colors":"viridis","alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"bar"}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"yaxis":{"domain":[0,1],"automargin":true,"title":"Total Yellow Card Received"},"xaxis":{"domain":[0,1],"automargin":true,"title":"Team","type":"category","categoryorder":"array","categoryarray":["Manchester City","Liverpool","Chelsea","Tottenham","Arsenal","Manchester United","Wolverhampton","Everton","Leicester","West Ham","Watford","Crystal Palace","Newcastle","Bournemouth","Burnley","Southampton","Brighton","Cardiff","Fulham","Huddersfield"]},"title":"Total Yellow Card Received by Team","hovermode":"closest","showlegend":true},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"data":[{"x":["Manchester City"],"y":[44],"type":"bar","name":"Manchester City","marker":{"color":"rgba(68,1,84,1)","line":{"color":"rgba(68,1,84,1)"}},"textfont":{"color":"rgba(68,1,84,1)"},"error_y":{"color":"rgba(68,1,84,1)"},"error_x":{"color":"rgba(68,1,84,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Liverpool"],"y":[38],"type":"bar","name":"Liverpool","marker":{"color":"rgba(72,21,103,1)","line":{"color":"rgba(72,21,103,1)"}},"textfont":{"color":"rgba(72,21,103,1)"},"error_y":{"color":"rgba(72,21,103,1)"},"error_x":{"color":"rgba(72,21,103,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Chelsea"],"y":[49],"type":"bar","name":"Chelsea","marker":{"color":"rgba(72,38,119,1)","line":{"color":"rgba(72,38,119,1)"}},"textfont":{"color":"rgba(72,38,119,1)"},"error_y":{"color":"rgba(72,38,119,1)"},"error_x":{"color":"rgba(72,38,119,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Tottenham"],"y":[56],"type":"bar","name":"Tottenham","marker":{"color":"rgba(69,55,129,1)","line":{"color":"rgba(69,55,129,1)"}},"textfont":{"color":"rgba(69,55,129,1)"},"error_y":{"color":"rgba(69,55,129,1)"},"error_x":{"color":"rgba(69,55,129,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Arsenal"],"y":[72],"type":"bar","name":"Arsenal","marker":{"color":"rgba(63,71,136,1)","line":{"color":"rgba(63,71,136,1)"}},"textfont":{"color":"rgba(63,71,136,1)"},"error_y":{"color":"rgba(63,71,136,1)"},"error_x":{"color":"rgba(63,71,136,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Manchester United"],"y":[73],"type":"bar","name":"Manchester United","marker":{"color":"rgba(57,85,140,1)","line":{"color":"rgba(57,85,140,1)"}},"textfont":{"color":"rgba(57,85,140,1)"},"error_y":{"color":"rgba(57,85,140,1)"},"error_x":{"color":"rgba(57,85,140,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Wolverhampton"],"y":[72],"type":"bar","name":"Wolverhampton","marker":{"color":"rgba(50,100,142,1)","line":{"color":"rgba(50,100,142,1)"}},"textfont":{"color":"rgba(50,100,142,1)"},"error_y":{"color":"rgba(50,100,142,1)"},"error_x":{"color":"rgba(50,100,142,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Everton"],"y":[55],"type":"bar","name":"Everton","marker":{"color":"rgba(45,113,142,1)","line":{"color":"rgba(45,113,142,1)"}},"textfont":{"color":"rgba(45,113,142,1)"},"error_y":{"color":"rgba(45,113,142,1)"},"error_x":{"color":"rgba(45,113,142,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Leicester"],"y":[57],"type":"bar","name":"Leicester","marker":{"color":"rgba(40,125,142,1)","line":{"color":"rgba(40,125,142,1)"}},"textfont":{"color":"rgba(40,125,142,1)"},"error_y":{"color":"rgba(40,125,142,1)"},"error_x":{"color":"rgba(40,125,142,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["West Ham"],"y":[59],"type":"bar","name":"West Ham","marker":{"color":"rgba(35,138,141,1)","line":{"color":"rgba(35,138,141,1)"}},"textfont":{"color":"rgba(35,138,141,1)"},"error_y":{"color":"rgba(35,138,141,1)"},"error_x":{"color":"rgba(35,138,141,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Watford"],"y":[77],"type":"bar","name":"Watford","marker":{"color":"rgba(31,150,139,1)","line":{"color":"rgba(31,150,139,1)"}},"textfont":{"color":"rgba(31,150,139,1)"},"error_y":{"color":"rgba(31,150,139,1)"},"error_x":{"color":"rgba(31,150,139,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Crystal Palace"],"y":[58],"type":"bar","name":"Crystal Palace","marker":{"color":"rgba(32,163,134,1)","line":{"color":"rgba(32,163,134,1)"}},"textfont":{"color":"rgba(32,163,134,1)"},"error_y":{"color":"rgba(32,163,134,1)"},"error_x":{"color":"rgba(32,163,134,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Newcastle"],"y":[57],"type":"bar","name":"Newcastle","marker":{"color":"rgba(41,175,127,1)","line":{"color":"rgba(41,175,127,1)"}},"textfont":{"color":"rgba(41,175,127,1)"},"error_y":{"color":"rgba(41,175,127,1)"},"error_x":{"color":"rgba(41,175,127,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Bournemouth"],"y":[60],"type":"bar","name":"Bournemouth","marker":{"color":"rgba(60,187,117,1)","line":{"color":"rgba(60,187,117,1)"}},"textfont":{"color":"rgba(60,187,117,1)"},"error_y":{"color":"rgba(60,187,117,1)"},"error_x":{"color":"rgba(60,187,117,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Burnley"],"y":[75],"type":"bar","name":"Burnley","marker":{"color":"rgba(86,198,103,1)","line":{"color":"rgba(86,198,103,1)"}},"textfont":{"color":"rgba(86,198,103,1)"},"error_y":{"color":"rgba(86,198,103,1)"},"error_x":{"color":"rgba(86,198,103,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Southampton"],"y":[71],"type":"bar","name":"Southampton","marker":{"color":"rgba(116,208,85,1)","line":{"color":"rgba(116,208,85,1)"}},"textfont":{"color":"rgba(116,208,85,1)"},"error_y":{"color":"rgba(116,208,85,1)"},"error_x":{"color":"rgba(116,208,85,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Brighton"],"y":[60],"type":"bar","name":"Brighton","marker":{"color":"rgba(148,216,64,1)","line":{"color":"rgba(148,216,64,1)"}},"textfont":{"color":"rgba(148,216,64,1)"},"error_y":{"color":"rgba(148,216,64,1)"},"error_x":{"color":"rgba(148,216,64,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Cardiff"],"y":[66],"type":"bar","name":"Cardiff","marker":{"color":"rgba(184,222,41,1)","line":{"color":"rgba(184,222,41,1)"}},"textfont":{"color":"rgba(184,222,41,1)"},"error_y":{"color":"rgba(184,222,41,1)"},"error_x":{"color":"rgba(184,222,41,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Fulham"],"y":[68],"type":"bar","name":"Fulham","marker":{"color":"rgba(220,227,24,1)","line":{"color":"rgba(220,227,24,1)"}},"textfont":{"color":"rgba(220,227,24,1)"},"error_y":{"color":"rgba(220,227,24,1)"},"error_x":{"color":"rgba(220,227,24,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Huddersfield"],"y":[55],"type":"bar","name":"Huddersfield","marker":{"color":"rgba(253,231,37,1)","line":{"color":"rgba(253,231,37,1)"}},"textfont":{"color":"rgba(253,231,37,1)"},"error_y":{"color":"rgba(253,231,37,1)"},"error_x":{"color":"rgba(253,231,37,1)"},"xaxis":"x","yaxis":"y","frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+<p>Yellow card is given when certain types of foul happens between two
+players from opposite teams. Foul is used as a tactics during the match
+to stop the opposite from attacking and regain possession of the ball.
+The plot shows the total number of yellow card received by each team,
+ordered by the final league position. It can be observed that lower
+ranked teams tend to receive more yellow cards. One explanation is that
+conducting fouls is the tactic they use to take back ball control.
+Therefore, we are interested to see if there is an association between
+yellow cards received and team performance.</p>
+</div>
+</div>
+<div id="club-support-total-spending" class="section level2">
+<h2>Club Support: Total Spending</h2>
+<p>Transfer windows opens twice a year, which is when football clubs
+trade players with each other. Economic support from clubs can be
+decisive in bidding talented players and bringing them to the club. Net
+spending is calculated by the money spent from buying players minus the
+money received from selling players.</p>
+<pre class="r"><code>spending_plot = plot_ly(transfer_df, 
+        x = ~team, 
+        y = ~ -total, 
+        type = &quot;bar&quot;, 
+        color = ~team,
+        colors = &#39;viridis&#39;) |&gt;
+  layout(yaxis = list(title = &#39;Total Spending (in Millions)&#39;),
+         xaxis = list(title = &#39;Team&#39;),
+         title = &#39;Transfer Market Total Spending in Recent Decade&#39;)
+spending_plot</code></pre>
+<div class="plotly html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-0dfbe99759ba7659e275" style="width:672px;height:480px;"></div>
+<script type="application/json" data-for="htmlwidget-0dfbe99759ba7659e275">{"x":{"visdat":{"6f5f2fd6a6a3":["function () ","plotlyVisDat"]},"cur_data":"6f5f2fd6a6a3","attrs":{"6f5f2fd6a6a3":{"x":{},"y":{},"color":{},"colors":"viridis","alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"bar"}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"yaxis":{"domain":[0,1],"automargin":true,"title":"Total Spending (in Millions)"},"xaxis":{"domain":[0,1],"automargin":true,"title":"Team","type":"category","categoryorder":"array","categoryarray":["Manchester City","Liverpool","Chelsea","Tottenham","Arsenal","Manchester United","Wolverhampton","Everton","Leicester","West Ham","Watford","Crystal Palace","Newcastle","Bournemouth","Burnley","Southampton","Brighton","Cardiff","Fulham","Huddersfield"]},"title":"Transfer Market Total Spending in Recent Decade","hovermode":"closest","showlegend":true},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"data":[{"x":["Manchester City"],"y":[1070.8299999999999],"type":"bar","name":"Manchester City","marker":{"color":"rgba(68,1,84,1)","line":{"color":"rgba(68,1,84,1)"}},"textfont":{"color":"rgba(68,1,84,1)"},"error_y":{"color":"rgba(68,1,84,1)"},"error_x":{"color":"rgba(68,1,84,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Liverpool"],"y":[666.54999999999995],"type":"bar","name":"Liverpool","marker":{"color":"rgba(72,21,103,1)","line":{"color":"rgba(72,21,103,1)"}},"textfont":{"color":"rgba(72,21,103,1)"},"error_y":{"color":"rgba(72,21,103,1)"},"error_x":{"color":"rgba(72,21,103,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Chelsea"],"y":[16.780000000000001],"type":"bar","name":"Chelsea","marker":{"color":"rgba(72,38,119,1)","line":{"color":"rgba(72,38,119,1)"}},"textfont":{"color":"rgba(72,38,119,1)"},"error_y":{"color":"rgba(72,38,119,1)"},"error_x":{"color":"rgba(72,38,119,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Tottenham"],"y":[324.86000000000001],"type":"bar","name":"Tottenham","marker":{"color":"rgba(69,55,129,1)","line":{"color":"rgba(69,55,129,1)"}},"textfont":{"color":"rgba(69,55,129,1)"},"error_y":{"color":"rgba(69,55,129,1)"},"error_x":{"color":"rgba(69,55,129,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Arsenal"],"y":[560.92999999999995],"type":"bar","name":"Arsenal","marker":{"color":"rgba(63,71,136,1)","line":{"color":"rgba(63,71,136,1)"}},"textfont":{"color":"rgba(63,71,136,1)"},"error_y":{"color":"rgba(63,71,136,1)"},"error_x":{"color":"rgba(63,71,136,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Manchester United"],"y":[281.72000000000003],"type":"bar","name":"Manchester United","marker":{"color":"rgba(57,85,140,1)","line":{"color":"rgba(57,85,140,1)"}},"textfont":{"color":"rgba(57,85,140,1)"},"error_y":{"color":"rgba(57,85,140,1)"},"error_x":{"color":"rgba(57,85,140,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Wolverhampton"],"y":[71.629999999999995],"type":"bar","name":"Wolverhampton","marker":{"color":"rgba(50,100,142,1)","line":{"color":"rgba(50,100,142,1)"}},"textfont":{"color":"rgba(50,100,142,1)"},"error_y":{"color":"rgba(50,100,142,1)"},"error_x":{"color":"rgba(50,100,142,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Everton"],"y":[208.19],"type":"bar","name":"Everton","marker":{"color":"rgba(45,113,142,1)","line":{"color":"rgba(45,113,142,1)"}},"textfont":{"color":"rgba(45,113,142,1)"},"error_y":{"color":"rgba(45,113,142,1)"},"error_x":{"color":"rgba(45,113,142,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Leicester"],"y":[168.69],"type":"bar","name":"Leicester","marker":{"color":"rgba(40,125,142,1)","line":{"color":"rgba(40,125,142,1)"}},"textfont":{"color":"rgba(40,125,142,1)"},"error_y":{"color":"rgba(40,125,142,1)"},"error_x":{"color":"rgba(40,125,142,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["West Ham"],"y":[85.159999999999997],"type":"bar","name":"West Ham","marker":{"color":"rgba(35,138,141,1)","line":{"color":"rgba(35,138,141,1)"}},"textfont":{"color":"rgba(35,138,141,1)"},"error_y":{"color":"rgba(35,138,141,1)"},"error_x":{"color":"rgba(35,138,141,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Watford"],"y":[175.72],"type":"bar","name":"Watford","marker":{"color":"rgba(31,150,139,1)","line":{"color":"rgba(31,150,139,1)"}},"textfont":{"color":"rgba(31,150,139,1)"},"error_y":{"color":"rgba(31,150,139,1)"},"error_x":{"color":"rgba(31,150,139,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Crystal Palace"],"y":[176.19999999999999],"type":"bar","name":"Crystal Palace","marker":{"color":"rgba(32,163,134,1)","line":{"color":"rgba(32,163,134,1)"}},"textfont":{"color":"rgba(32,163,134,1)"},"error_y":{"color":"rgba(32,163,134,1)"},"error_x":{"color":"rgba(32,163,134,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Newcastle"],"y":[221.72],"type":"bar","name":"Newcastle","marker":{"color":"rgba(41,175,127,1)","line":{"color":"rgba(41,175,127,1)"}},"textfont":{"color":"rgba(41,175,127,1)"},"error_y":{"color":"rgba(41,175,127,1)"},"error_x":{"color":"rgba(41,175,127,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Bournemouth"],"y":[107.16],"type":"bar","name":"Bournemouth","marker":{"color":"rgba(60,187,117,1)","line":{"color":"rgba(60,187,117,1)"}},"textfont":{"color":"rgba(60,187,117,1)"},"error_y":{"color":"rgba(60,187,117,1)"},"error_x":{"color":"rgba(60,187,117,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Burnley"],"y":[151.28999999999999],"type":"bar","name":"Burnley","marker":{"color":"rgba(86,198,103,1)","line":{"color":"rgba(86,198,103,1)"}},"textfont":{"color":"rgba(86,198,103,1)"},"error_y":{"color":"rgba(86,198,103,1)"},"error_x":{"color":"rgba(86,198,103,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Southampton"],"y":[73.709999999999994],"type":"bar","name":"Southampton","marker":{"color":"rgba(116,208,85,1)","line":{"color":"rgba(116,208,85,1)"}},"textfont":{"color":"rgba(116,208,85,1)"},"error_y":{"color":"rgba(116,208,85,1)"},"error_x":{"color":"rgba(116,208,85,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Brighton"],"y":[33.439999999999998],"type":"bar","name":"Brighton","marker":{"color":"rgba(148,216,64,1)","line":{"color":"rgba(148,216,64,1)"}},"textfont":{"color":"rgba(148,216,64,1)"},"error_y":{"color":"rgba(148,216,64,1)"},"error_x":{"color":"rgba(148,216,64,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Cardiff"],"y":[159.30000000000001],"type":"bar","name":"Cardiff","marker":{"color":"rgba(184,222,41,1)","line":{"color":"rgba(184,222,41,1)"}},"textfont":{"color":"rgba(184,222,41,1)"},"error_y":{"color":"rgba(184,222,41,1)"},"error_x":{"color":"rgba(184,222,41,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Fulham"],"y":[95.090000000000003],"type":"bar","name":"Fulham","marker":{"color":"rgba(220,227,24,1)","line":{"color":"rgba(220,227,24,1)"}},"textfont":{"color":"rgba(220,227,24,1)"},"error_y":{"color":"rgba(220,227,24,1)"},"error_x":{"color":"rgba(220,227,24,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["Huddersfield"],"y":[129.47],"type":"bar","name":"Huddersfield","marker":{"color":"rgba(253,231,37,1)","line":{"color":"rgba(253,231,37,1)"}},"textfont":{"color":"rgba(253,231,37,1)"},"error_y":{"color":"rgba(253,231,37,1)"},"error_x":{"color":"rgba(253,231,37,1)"},"xaxis":"x","yaxis":"y","frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+<p>This histogram shows the net total amount of money spent by the
+different teams on transfers from 2009 to 2019. We can observe that
+Manchester City, Liverpool and Arsenal are 3 teams with significant
+spending in the transfer market over the past decade. Comparing the net
+spending across the teams, ordered by final rank of the season, it can
+be seen that generally more spending leads to a better position in
+Premier League at the end. One outlier is Chelsea Football Club, who may
+have earned a considerable amount of money by selling players from the
+Academy (raised by the club).</p>
+</div>
 </div>
 <div id="regression-analysis" class="section level1">
-<h1>Regression Analysis</h1>
+<h1><strong>Regression Analysis</strong></h1>
+<div id="linear-models" class="section level2">
+<h2>Linear Models</h2>
+<div id="full-model" class="section level3">
+<h3>Full Model</h3>
+<p>Given previous exploration of the datasets and existing scientific
+studies on the factors that could potentially affect sport performance,
+a regression model is fitted to see if any variable has a significant
+impact on team performance.</p>
+<p>A full regression model is fitted with the following components:</p>
+<ul>
+<li><p>Outcome: <code>general_goal_difference</code> represents team
+performance, which is goal scored minus goal conceded</p></li>
+<li><p>Predictor: <code>general_squad_average_age</code> is the average
+age of all players of the team</p></li>
+<li><p>Predictor: <code>ave_age_proportion</code> is the proportion of
+players aged 23 to 29 years old in the team</p></li>
+<li><p>Predictor: <code>europe_player_proportion</code> is the
+proportion of players with an European origin in the team</p></li>
+<li><p>Predictor: <code>attack_posession</code> is the ball possession
+rate of the team</p></li>
+<li><p>Predictor: <code>attack_passes_back</code> is the number of short
+passes done during attack</p></li>
+<li><p>Predictor: <code>general_card_yellow</code> is the number of
+yellow cards received by the team over the season</p></li>
+<li><p>Predictor: <code>total</code> is the total net spending in
+transfer market over the past decade</p></li>
+</ul>
+<pre class="r"><code>match_df = match_df |&gt; 
+  mutate(ave_age_proportion = ave_age_proportion*100,
+         europe_player_proportion = europe_player_proportion*100,
+         total = -total) 
+model_full = match_df |&gt; 
+  lm(general_goal_difference ~ general_squad_average_age + ave_age_proportion + europe_player_proportion
+     + attack_posession + attack_passes_back + general_card_yellow + total, data = _ ) |&gt; 
+  broom::tidy() 
+  
+knitr::kable(model_full, digits=3)</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-144.135</td>
+<td align="right">178.592</td>
+<td align="right">-0.807</td>
+<td align="right">0.435</td>
+</tr>
+<tr class="even">
+<td align="left">general_squad_average_age</td>
+<td align="right">-2.954</td>
+<td align="right">4.463</td>
+<td align="right">-0.662</td>
+<td align="right">0.521</td>
+</tr>
+<tr class="odd">
+<td align="left">ave_age_proportion</td>
+<td align="right">0.204</td>
+<td align="right">0.389</td>
+<td align="right">0.525</td>
+<td align="right">0.609</td>
+</tr>
+<tr class="even">
+<td align="left">europe_player_proportion</td>
+<td align="right">-0.050</td>
+<td align="right">0.491</td>
+<td align="right">-0.103</td>
+<td align="right">0.920</td>
+</tr>
+<tr class="odd">
+<td align="left">attack_posession</td>
+<td align="right">6.345</td>
+<td align="right">2.771</td>
+<td align="right">2.290</td>
+<td align="right">0.041</td>
+</tr>
+<tr class="even">
+<td align="left">attack_passes_back</td>
+<td align="right">-0.034</td>
+<td align="right">0.025</td>
+<td align="right">-1.377</td>
+<td align="right">0.194</td>
+</tr>
+<tr class="odd">
+<td align="left">general_card_yellow</td>
+<td align="right">-0.363</td>
+<td align="right">0.483</td>
+<td align="right">-0.752</td>
+<td align="right">0.467</td>
+</tr>
+<tr class="even">
+<td align="left">total</td>
+<td align="right">0.039</td>
+<td align="right">0.024</td>
+<td align="right">1.597</td>
+<td align="right">0.136</td>
+</tr>
+</tbody>
+</table>
+<p>Looking at the linear model result, <code>attack_posession</code> has
+an estimate of <strong>6.345</strong> and a p value of
+<strong>0.041</strong>, indicating that it is a significant factor in
+terms of team performance. In fact, there is a positive correlation
+between ball possession rate and goal difference. Besides possession
+rate, the p value of other variables are all greater than 0.05, which
+means that the relationship between those variables and the outcome is
+not statistically significant. Nevertheless, we are still able to read
+pattern from the result. <code>total</code> has the second smallest p
+value of <code>0.136</code> and a positive coefficient estimate,
+indicating that economic support from the club is indeed positively
+associated with club performance.</p>
+</div>
+<div id="tactic-model" class="section level3">
+<h3>Tactic Model</h3>
+<p>After evaluating the full model with all the variables of interest,
+it seems that game tactics have the most significant effect on team
+performance. We decide that it would be interesting to create another
+linear regression model focusing only on variables representing tactic
+statistics and compare it with the full model above.</p>
+<ul>
+<li><p>Outcome: <code>general_goal_difference</code> represents team
+performance, which is goal scored minus goal conceded</p></li>
+<li><p>Predictor: <code>attack_posession</code> is the ball possession
+rate of the team</p></li>
+<li><p>Predictor: <code>attack_passes_back</code> is the number of short
+passes done during attack</p></li>
+</ul>
+<pre class="r"><code>tactic_model = match_df |&gt; 
+  lm(general_goal_difference ~ attack_posession + attack_passes_back, data = _)|&gt; 
+  broom::tidy() 
+knitr::kable(tactic_model, digits=3)</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-285.739</td>
+<td align="right">68.497</td>
+<td align="right">-4.172</td>
+<td align="right">0.001</td>
+</tr>
+<tr class="even">
+<td align="left">attack_posession</td>
+<td align="right">7.237</td>
+<td align="right">2.511</td>
+<td align="right">2.882</td>
+<td align="right">0.010</td>
+</tr>
+<tr class="odd">
+<td align="left">attack_passes_back</td>
+<td align="right">-0.029</td>
+<td align="right">0.024</td>
+<td align="right">-1.244</td>
+<td align="right">0.230</td>
+</tr>
+</tbody>
+</table>
+<p>Looking at the regression model results,
+<code>attack_possession</code> has an even smaller p value of
+<strong>0.01</strong>, indicating that that statistical correlation
+between it and the outcome is stronger in our tactic model.</p>
+</div>
+</div>
+<div id="cross-validation" class="section level2">
+<h2>Cross Validation</h2>
+<p>With one general full linear model and one tactic specific linear
+model, it would be interesting to compare <code>rmse</code> of the
+predicted <code>general_goal_difference</code> between the two by using
+cross validation. Below shows the result of <code>rmse</code>
+distribution of the two models.</p>
+<pre class="r"><code>cv_df = 
+  crossv_mc(match_df, 100) |&gt; 
+  mutate(
+    train = map(train, as_tibble),
+    test = map(test, as_tibble))
+
+cv_df = 
+  cv_df |&gt; 
+  mutate(
+    full_mod  = map(train, \(df) lm(general_goal_difference ~ general_squad_average_age + ave_age_proportion + 
+                      europe_player_proportion + attack_posession + attack_passes_back + 
+                      general_card_yellow + total, data = df)),
+    tactic_mod  = map(train, \(df)  lm(general_goal_difference ~ attack_posession + attack_passes_back, data = df)))|&gt; 
+  mutate(
+    rmse_full_model = map2_dbl(full_mod, test, \(mod, df) rmse(model = mod, data = df)),
+    rmse_tactic_model = map2_dbl(tactic_mod, test, \(mod, df) rmse(model = mod, data = df)))
+
+cv_df |&gt; 
+  select(starts_with(&quot;rmse&quot;)) |&gt; 
+  pivot_longer(
+    everything(),
+    names_to = &quot;model&quot;, 
+    values_to = &quot;rmse&quot;,
+    names_prefix = &quot;rmse_&quot;) |&gt; 
+  mutate(model = fct_inorder(model)) |&gt; 
+  ggplot(aes(x = model, y = rmse)) + geom_violin()</code></pre>
+<p><img src="project_report_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
+</div>
 </div>
 
 
@@ -486,6 +1679,11 @@ $(document).ready(function () {
 </script>
 
 <!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
 
 <script>
 $(document).ready(function ()  {

@@ -5,48 +5,94 @@ output:
     toc: true
     toc_float: true 
     theme: cosmo
+    code_folding: hide
 ---
-
-# Introduction
-
-
-# Data Sources
-
-# Data Manipulation 
-
 ```{r setup, include=FALSE}
 library(tidyverse)
 library(readxl)
 library(plotly)
+library(mgcv)
+library(viridis)
+library(modelr)
+set.seed(1)
 ```
 
-```{r message=FALSE, warning=FALSE}
-match_df = read_csv("./data/match_data.csv")|> 
-  janitor::clean_names()
-transfer_df = read_csv("./data/transfer.csv")|> 
-  janitor::clean_names() 
+# **Introduction**
+## Premier League 
 
+As the most popular football league worldwide, the Premier League consists of 20 competitive football clubs in England and attracts some of the most talented football players. Each season lasts from August to June, with each team playing 38 matches against all other teams (home and away). Final standings is determined by points earned throughout the season, with 3 points for each win, 1 point for each draw, and 0 point for each loss.
+
+## Motivation 
+
+Statistical inference is commonly used as part of sporting analysis to help the clubs to achieve better game performance. Data scientists can use past data to build models and predict future performance.     
+For our final project, we focused on the Premier League season 2018/19 because it was the season before pandemic and data availability. We are interested in the factors with significant effect on the goal difference (number of goals scored minus goals conceded) for each team by the end of the season so that we might be able to predict team performance for future seasons. Factors including the player's average age, proportion of non-european players, possession rate, passing accuracy, number of yellow cards received, and money spent in the transfer window are being explored based on our data exploration process and existing scientific studies.  	
+
+## Related Work 
+
+As a high performance sports, thousands of scientific studies have been conducted to show the deciding effects of some variables on sport performance. 
+
+One [article](https://pubmed.ncbi.nlm.nih.gov/21604225/) examined age and team ranking and player performance and found a significant correlation between the relative age effect and success as defined by team performance and final ranking. 
+
+Tactic can never be underestimated in a group sport. Since the 1996 European Cup, technical football, represented by the French team, has occupied the mainstream of world football in the past two European Championships and World Cups. Technical and tactical techniques and tactics are also different, which affects the results of the game at a high level. The [article](https://www.researchgate.net/publication/315562890_Analysis_on_the_Effect_of_Attack_Skills_and_Tactics_on_Football_Matches_Scoring_Efficiency) proves the significant impact of passing rate and ball possession rate on the outcome of the game.
+
+As modern football develops, the role of financial supports gets much more important compared to the past. Football clubs can spend hundreds of millions of Euros to trade players during the transfer window. In this [study](https://scholarcommons.sc.edu/cgi/viewcontent.cgi?article=1518&context=senior_theses), the authors consider the impact of Financial Fair Play regulations and team ROI and focus on case studies of Manchester City, Chelsea, Leicester City and Newcastle United. 
+
+## Initial Questions
+
+* What represents a club's success?
+
+* What factors can influence the performance of a football club?
+
+* Will different match styles have significant differences in club performance?
+
+* What impact does the club's economic situation have on performance?
+
+
+# **Data Sources and Manipulation**
+
+## Source 1: Match Statistic Summary
+
+The dataset of [match statistics](https://www.kaggle.com/datasets/thesiff/premierleague1819/) was downloaded and read in. It includes different measures of game statistics for 20 teams in Premier League of season 2018-19. Our intended outcome value is `general_goal_difference`, which is measured by the goal scored minus goal conceded. Variables of measure include basic information about the squad, total fouls received, goal stats, attack stats, defense stats, possession rate, and TV revenue. We selected the variables of interest: `general_goal_difference`, `general_won`, `general_squad_average_age`, `attack_posession`, `attack_passes_back`, `attack_passes_long`, `general_card_yellow`.
+
+Teams are ordered by the final league position, from 1 to 20. It can be observed that higher ranked teams have positive goal difference, while lower ranked teams have negative goal difference. The seperation between positive and negative goal difference happens about rank 10 so that we decide `general_goal_difference` is an accurate representation of the team performance outcome.
+
+```{r message=FALSE, warning=FALSE, include=TRUE}
+match_df = read_csv("./data/match_data.csv")|> 
+  janitor::clean_names() |> 
+  select(team, general_won, general_league_position, general_goal_difference, general_squad_average_age, attack_posession, 
+         attack_passes_back, attack_passes_long, general_card_yellow)
+match_df |> 
+  knitr::kable()
+```
+
+
+## Source 2: Player Statistic (Age)
+
+The dataset of [player statistics](https://fbref.com/en/comps/9/2018-2019/stats/2018-2019-Premier-League-Stats#all_stats_standard) was extracted and read in. Variables of interest are selected, including player's nation, team, age, and total minutes played during the season. Team names are modified so that they match with `match_df`, preparing for further datasets merging. Below shows a couple player entries.
+
+```{r message=FALSE, warning=FALSE, include=TRUE}
 player_df = read_excel("./data/player_game.xlsx", sheet = 1) |> 
   janitor::clean_names()|>
-  rename(team = squad)
+  rename(team = squad)|> 
+  select(player, nation, team, age)
 player_df$team = gsub("Manchester Utd", "Manchester United", player_df$team)
 player_df$team = gsub("Newcastle Utd", "Newcastle", player_df$team)
 player_df$team = gsub("Wolves", "Wolverhampton", player_df$team)
 player_df$team = gsub("Cardiff City", "Cardiff", player_df$team)
 player_df$team = gsub("Leicester City", "Leicester", player_df$team)
 
-country_code_df = read.csv("./data/country_codes.csv") |> 
-  janitor::clean_names() |> 
-  rename(country = fifa) 
+player_df |>
+  head(5) |> 
+  knitr::kable() 
 ```
 
+Using `player_df`, we changed the `age` variable to number so that we could calculate the 25th and 75th percentile of age distribution, which is 23 and 29 years old. Then we calculated the proportion of players that belong to the age range of 23 to 29 years old, grouped by 20 different teams. We merged the `ave_age_proportion` variable into `match_df` using `left_join.` Belows shows the result for the top 5 teams.
 
-```{r message=FALSE, warning=FALSE}
+
+```{r message=FALSE, warning=FALSE, include=TRUE}
 age_player_df = player_df  |> 
- mutate(age = as.numeric(as.character(age)),
- min = as.numeric(as.character(min)))  |> 
+ mutate(age = as.numeric(as.character(age))) |> 
  na.omit()
-
 q25 <- quantile(age_player_df$age, 0.25)
 q75 <- quantile(age_player_df$age, 0.75)
 
@@ -54,18 +100,27 @@ proportion_age_23_29 <- age_player_df  |>
   group_by(team) |>                       
   summarise(
     total = n(),                           
-    count_23_29 = sum(age >= 23 & age <= 29) 
-  )  |> 
+    count_23_29 = sum(age >= 23 & age <= 29))  |> 
   mutate(proportion = count_23_29 / total)
 
-match_df <- match_df  |> 
+match_df = match_df  |> 
   left_join(proportion_age_23_29, by = "team")  |> 
   select(-total, -count_23_29)  |> 
   rename(ave_age_proportion=proportion)
+
+match_df|>
+  head(5) |> 
+  knitr::kable()
 ```
 
+## Source 3: Player Statistic (Country, Region) 
 
-```{r message=FALSE, warning=FALSE}
+`player_df` has variable `country`, which is where each player comes from. Dataset of [country codes](https://github.com/datasets/country-codes/blob/master/data/country-codes.csv) was downloaded and read in. `country_code_df` is manipulated so that Great Britain is separated into `ENG, NIR, SCO, WAL`. Variables include the country name, country code, and the region that country belongs to. Belows shows 5 entries of cleaned `country_code_df`.
+
+```{r message=FALSE, warning=FALSE, include=TRUE}
+country_code_df = read.csv("./data/country_codes.csv") |> 
+  janitor::clean_names() |> 
+  rename(country = fifa) 
 GBR_df = country_code_df |> 
   filter(country == "ENG,NIR,SCO,WAL") 
 GBR_df = data.frame(country = unlist(strsplit(as.character(GBR_df$country), ",")),
@@ -75,15 +130,25 @@ country_code_df = country_code_df |>
   select(country, official_name_en, region_name) |> 
   bind_rows(GBR_df)
 
+country_code_df|>
+  head(5) |> 
+  knitr::kable()
+```
+
+`player_df` is manipulated so that country origin for each player is saved as a variable. Then the dataset is merged by `country_code_df` and each player has a new variable indicating the region he comes from. Then the proportion of European players is calculated for each team and the variable `europe_player_proportion` is added to `match_df` by merging the datasets. Below shows the result of the dataframe for the top 5 teams. 
+
+```{r message=FALSE, warning=FALSE, include=TRUE}
 player_dist = player_df |>
   separate(nation, into = c("country_abbre", "country"), convert = TRUE) |> 
   select(country, player, team) |> 
   left_join(x = _, y = country_code_df) |> 
   drop_na()
-```
+player_dist$team <- factor(player_dist$team, levels = unique(player_dist$team), 
+                           labels = c("Manchester City", "Liverpool", "Chelsea", "Tottenham", "Arsenal", "Manchester United",
+                                      "Wolverhampton", "Everton", "Leicester", "West Ham", "Watford", "Crystal Palace", 
+                                      "Newcastle", "Bournemouth", "Burnley", "Southampton", "Brighton", "Cardiff", "Fulham", 
+                                      "Huddersfield"))
 
-
-```{r message=FALSE, warning=FALSE}
 player_region = player_dist |>
   group_by(team) |>                       
   summarise(
@@ -96,24 +161,252 @@ player_europe = player_dist |>
   left_join(x = _, y = player_region) |> 
   mutate(proportion = n_europe/total)
 
-match_df <- match_df  |> 
+match_df = match_df  |> 
   left_join(player_europe, by = "team")  |> 
   select(-total, -n_europe)  |> 
   rename(europe_player_proportion = proportion)
+match_df|>
+  head(5) |> 
+  knitr::kable()
 ```
 
 
-```{r message=FALSE, warning=FALSE}
+## Source 4: Transfer Market Spending
+
+The dataset of [spending in the transfer market](https://www.kaggle.com/datasets/thesiff/premierleague1819/) is downloaded and read in. `transfer_df` includes variables indicating net spending for each year from 2009 to 2019, and the total net spending over the past decade. We are interested in exploring the relationship between total net spending and team performance so these two variables are selected and merged into `match_df` for analysis. Below shows the result of our final cleaned `match_df` for top 5 teams. 
+
+
+```{r message=FALSE, warning=FALSE, include=TRUE}
+transfer_df = read_csv("./data/transfer.csv")|> 
+  janitor::clean_names() 
 transfer_df$team <- factor(transfer_df$team, levels = unique(transfer_df$team), 
-                           labels = c("Manchester City", "Manchester United", "Tottenham","Liverpool", "Chelsea", "Arsenal", "Burnley", "Everton", "Leicester", "Newcastle", "Crystal Palace", "Bournemouth", "West Ham", "Watford", "Brighton", "Huddersfield", "Southampton", "Wolverhampton", "Cardiff", "Fulham"))
+                           labels = c("Manchester City", "Liverpool", "Chelsea", "Tottenham", "Arsenal", "Manchester United",
+                                      "Wolverhampton", "Everton", "Leicester", "West Ham", "Watford", "Crystal Palace", 
+                                      "Newcastle", "Bournemouth", "Burnley", "Southampton", "Brighton", "Cardiff", "Fulham", 
+                                      "Huddersfield"))
+transfer_df = transfer_df |> 
+  select(team, total)
+match_df = match_df  |> 
+  left_join(transfer_df, by = "team") 
+
+match_df|>
+  head(5) |> 
+  knitr::kable()
 ```
 
-```{r message=FALSE, warning=FALSE}
-match_df <- merge(match_df, transfer_df, by = "team")
-match_df <- match_df[order(match_df$general_league_position), ] 
+
+# **Exploratory Analysis** 
+
+## Player Distribution 
+### Player Distribution by Region
+
+```{r include=TRUE}
+player_dist |> 
+  ggplot() + geom_bar(aes(x = region_name)) +
+  labs(title = "PL Players by World Region", 
+       x = "Region of the World",
+       y = "Count of Players")+ 
+  scale_fill_viridis_d(option = "viridis")
 ```
 
+The bar plot shows the distribution of Premier League football players origin, with categories of 5 regions of the world. From the plot, it can be observed that most of the players are from Europe. Since Premier League takes place in England, which is part of Europe, there might be an association between players origin and performance in the club. 
+
+### Player Distribution of 20 Teams
+
+```{r include=TRUE}
+player_dist |>
+  count(region_name, team) |> 
+  plot_ly(data = _,
+        x = ~ team,
+        y = ~ n,
+        color = ~ region_name,
+        colors = "Set2")  |> 
+  add_markers(text = ~paste0('Football Club: ', team,
+                      '</br>World Region: ', region_name,
+                      '<br>Number in region: ', n),
+        hoverinfo = "text")  |> 
+  layout(showlegend = TRUE,
+         title = "Player Distribution by Football Club",
+         xaxis = list(title = "FC"),
+         yaxis = list(title = "Number of Player by World Region"))
+```
+
+We further look at the distribution of player origin of the 20 teams. Using this plot, we can visualize how proportion of players by region origin change from team to team, ordered by the final rank by the end of the season. In the Premier League, there is a law regarding the limit of players without an European nationality. Thus, we intend to explore the relationship between proportion of non-European players and performance of the club.
+
+## Tactic: Match Style of Play 
+### Possession Rate 
+
+```{r include=TRUE}
+possession_plot = match_df |> 
+  plot_ly(data = _, x = ~ attack_posession, y = ~ general_goal_difference,
+              type = 'scatter', mode = 'markers', text = ~team, 
+              marker = list(size = 10, color = ~ general_goal_difference, 
+                            colorbar = list(title = 'Goal Difference'), 
+                            colorscale = 'turbo')) |>
+      layout(title = 'Goal Difference vs. Match Style',
+             xaxis = list(title = 'Possession Rate'),
+             yaxis = list(title = 'Goal Difference')) 
+possession_plot
+
+lm(general_goal_difference ~ attack_posession, data = match_df) |> 
+  broom::tidy() |> 
+  knitr::kable(digits = 3)
+```
+
+The scatter plot shows the relationship between possession rate and goal difference. We can observe that teams with a higher attack possession percentage tend to have more goal scored than conceded, indicating a potential correlation between controlling the game and league success.
 
 
-# Exploratory Analysis 
-# Regression Analysis 
+### Long Pass vs. Short Pass
+
+```{r include=TRUE}
+pass_plot = match_df |> 
+  plot_ly(data = _ , x = ~ attack_passes_long, y = ~ attack_passes_back,
+              type = 'scatter', mode = 'markers', 
+              text = ~paste(team, general_goal_difference), 
+              marker = list(size = ~ general_won, color = ~ general_goal_difference, 
+                            colorbar = list(title = 'Goal Difference'),
+                            colorscale = 'turbo')) |>
+      layout(title = 'Long Pass vs Short Pass',
+             xaxis = list(title = 'Long Pass'),
+             yaxis = list(title = 'Short Pass'))
+pass_plot
+```
+
+This plot compares the number of long passes to short passes for each team, with the size of each point representing the number of games won and the color gradient representing general goal difference. We can observe that teams that score more goals tend to have more short passes while teams that score less goals tend to have more long passes. Passing style greatly defines match tactic, with short pass indicating better ball control and cooperation among the team. We find it interesting to examine team tactics through match data. 
+
+### Fouls Received: Yellow Card Count
+
+```{r include=TRUE}
+match_df$team <- factor(match_df$team, levels = unique(match_df$team), 
+                           labels = c("Manchester City", "Liverpool", "Chelsea", "Tottenham", "Arsenal", "Manchester United",
+                                      "Wolverhampton", "Everton", "Leicester", "West Ham", "Watford", "Crystal Palace", 
+                                      "Newcastle", "Bournemouth", "Burnley", "Southampton", "Brighton", "Cardiff", "Fulham", 
+                                      "Huddersfield"))
+yellowcard_plot = plot_ly(match_df, 
+        x = ~ team, 
+        y = ~ general_card_yellow, 
+        type = "bar", 
+        color = ~ team,
+        colors = 'viridis') |>
+  layout(yaxis = list(title = 'Total Yellow Card Received'),
+         xaxis = list(title = 'Team'),
+         title = 'Total Yellow Card Received by Team')
+yellowcard_plot
+```
+
+Yellow card is given when certain types of foul happens between two players from opposite teams. Foul is used as a tactics during the match to stop the opposite from attacking and regain possession of the ball. The plot shows the total number of yellow card received by each team, ordered by the final league position. It can be observed that lower ranked teams tend to receive more yellow cards. One explanation is that conducting fouls is the tactic they use to take back ball control. Therefore, we are interested to see if there is an association between yellow cards received and team performance.
+
+## Club Support: Total Spending 
+
+Transfer windows opens twice a year, which is when football clubs trade players with each other. Economic support from clubs can be decisive in bidding talented players and bringing them to the club. Net spending is calculated by the money spent from buying players minus the money received from selling players. 
+
+```{r include=TRUE}
+spending_plot = plot_ly(transfer_df, 
+        x = ~team, 
+        y = ~ -total, 
+        type = "bar", 
+        color = ~team,
+        colors = 'viridis') |>
+  layout(yaxis = list(title = 'Total Spending (in Millions)'),
+         xaxis = list(title = 'Team'),
+         title = 'Transfer Market Total Spending in Recent Decade')
+spending_plot
+```
+
+This histogram shows the net total amount of money spent by the different teams on transfers from 2009 to 2019. We can observe that Manchester City, Liverpool and Arsenal are 3 teams with significant spending in the transfer market over the past decade. Comparing the net spending across the teams, ordered by final rank of the season, it can be seen that generally more spending leads to a better position in Premier League at the end. One outlier is Chelsea Football Club, who may have earned a considerable amount of money by selling players from the Academy (raised by the club). 
+
+# **Regression Analysis** 
+
+## Linear Models
+
+### Full Model
+
+Given previous exploration of the datasets and existing scientific studies on the factors that could potentially affect sport performance, a regression model is fitted to see if any variable has a significant impact on team performance. 
+
+A full regression model is fitted with the following components:
+
+* Outcome: `general_goal_difference` represents team performance, which is goal scored minus goal conceded  
+
+* Predictor: `general_squad_average_age` is the average age of all players of the team  
+
+* Predictor: `ave_age_proportion` is the proportion of players aged 23 to 29 years old in the team  
+
+* Predictor: `europe_player_proportion` is the proportion of players with an European origin in the team  
+
+* Predictor: `attack_posession` is the ball possession rate of the team  
+
+* Predictor: `attack_passes_back` is the number of short passes done during attack  
+
+* Predictor: `general_card_yellow` is the number of yellow cards received by the team over the season  
+
+* Predictor: `total` is the total net spending in transfer market over the past decade  
+
+
+```{r include=TRUE}
+match_df = match_df |> 
+  mutate(ave_age_proportion = ave_age_proportion*100,
+         europe_player_proportion = europe_player_proportion*100,
+         total = -total) 
+model_full = match_df |> 
+  lm(general_goal_difference ~ general_squad_average_age + ave_age_proportion + europe_player_proportion
+     + attack_posession + attack_passes_back + general_card_yellow + total, data = _ ) |> 
+  broom::tidy() 
+  
+knitr::kable(model_full, digits=3)
+```
+
+Looking at the linear model result, `attack_posession` has an estimate of **6.345** and a p value of **0.041**, indicating that it is a significant factor in terms of team performance. In fact, there is a positive correlation between ball possession rate and goal difference. Besides possession rate, the p value of other variables are all greater than 0.05, which means that the relationship between those variables and the outcome is not statistically significant. Nevertheless, we are still able to read pattern from the result. `total` has the second smallest p value of `0.136` and a positive coefficient estimate, indicating that economic support from the club is indeed positively associated with club performance. 
+
+### Tactic Model
+
+After evaluating the full model with all the variables of interest, it seems that game tactics have the most significant effect on team performance. We decide that it would be interesting to create another linear regression model focusing only on variables representing tactic statistics and compare it with the full model above. 
+
+* Outcome: `general_goal_difference` represents team performance, which is goal scored minus goal conceded  
+
+* Predictor: `attack_posession` is the ball possession rate of the team  
+
+* Predictor: `attack_passes_back` is the number of short passes done during attack  
+
+
+```{r include=TRUE}
+tactic_model = match_df |> 
+  lm(general_goal_difference ~ attack_posession + attack_passes_back, data = _)|> 
+  broom::tidy() 
+knitr::kable(tactic_model, digits=3)
+```
+
+Looking at the regression model results, `attack_possession` has an even smaller p value of **0.01**, indicating that that statistical correlation between it and the outcome is stronger in our tactic model. 
+
+## Cross Validation
+
+With one general full linear model and one tactic specific linear model, it would be interesting to compare `rmse` of the predicted `general_goal_difference` between the two by using cross validation. Below shows the result of `rmse` distribution of the two models.
+
+```{r include=TRUE}
+cv_df = 
+  crossv_mc(match_df, 100) |> 
+  mutate(
+    train = map(train, as_tibble),
+    test = map(test, as_tibble))
+
+cv_df = 
+  cv_df |> 
+  mutate(
+    full_mod  = map(train, \(df) lm(general_goal_difference ~ general_squad_average_age + ave_age_proportion + 
+                      europe_player_proportion + attack_posession + attack_passes_back + 
+                      general_card_yellow + total, data = df)),
+    tactic_mod  = map(train, \(df)  lm(general_goal_difference ~ attack_posession + attack_passes_back, data = df)))|> 
+  mutate(
+    rmse_full_model = map2_dbl(full_mod, test, \(mod, df) rmse(model = mod, data = df)),
+    rmse_tactic_model = map2_dbl(tactic_mod, test, \(mod, df) rmse(model = mod, data = df)))
+
+cv_df |> 
+  select(starts_with("rmse")) |> 
+  pivot_longer(
+    everything(),
+    names_to = "model", 
+    values_to = "rmse",
+    names_prefix = "rmse_") |> 
+  mutate(model = fct_inorder(model)) |> 
+  ggplot(aes(x = model, y = rmse)) + geom_violin()
+```
+

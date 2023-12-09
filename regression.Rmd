@@ -5,10 +5,10 @@ output:
     toc: true
     toc_float: true 
     theme: cosmo
+    code_folding: hide
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(include = FALSE)
 library(tidyverse)
 library(readxl)
 library(plotly)
@@ -101,39 +101,73 @@ match_df = match_df  |>
   left_join(transfer_df, by = "team") 
 ```
 
-# Linear Models
+# **Linear Models**
 
-**We have tested the association between individual variables and the outcome. **
+## Full Model
+
+Given previous exploration of the datasets and existing scientific studies on the factors that could potentially affect sport performance, a regression model is fitted to see if any variable has a significant impact on team performance. 
+
+A full regression model is fitted with the following components:
+
+* Outcome: `general_goal_difference` represents team performance, which is goal scored minus goal conceded  
+
+* Predictor: `general_squad_average_age` is the average age of all players of the team  
+
+* Predictor: `ave_age_proportion` is the proportion of players aged 23 to 29 years old in the team  
+
+* Predictor: `europe_player_proportion` is the proportion of players with an European origin in the team  
+
+* Predictor: `attack_posession` is the ball possession rate of the team  
+
+* Predictor: `attack_passes_back` is the number of short passes done during attack  
+
+* Predictor: `general_card_yellow` is the number of yellow cards received by the team over the season  
+
+* Predictor: `total` is the total net spending in transfer market over the past decade  
+
 
 ```{r include=TRUE}
 match_df = match_df |> 
   mutate(ave_age_proportion = ave_age_proportion*100,
          europe_player_proportion = europe_player_proportion*100,
-         total = -total,
-         goal_accurary = 100*attack_shots_on_target/attack_shots) |> 
-  select(general_goal_difference, general_points, general_squad_average_age, ave_age_proportion, europe_player_proportion,
-         attack_posession, attack_pass_accuracy, general_card_yellow, total) 
+         total = -total) 
 model_full = match_df |> 
   lm(general_goal_difference ~ general_squad_average_age + ave_age_proportion + europe_player_proportion
-     + attack_posession + attack_pass_accuracy + general_card_yellow + total, data = _ ) |> 
+     + attack_posession + attack_passes_back + general_card_yellow + total, data = _ ) |> 
   broom::tidy() 
   
 knitr::kable(model_full, digits=3)
 ```
 
+Looking at the linear model result, `attack_posession` has an estimate of **6.345** and a p value of **0.041**, indicating that it is a significant factor in terms of team performance. In fact, there is a positive correlation between ball possession rate and goal difference. Besides possession rate, the p value of other variables are all greater than 0.05, which means that the relationship between those variables and the outcome is not statistically significant. Nevertheless, we are still able to read pattern from the result. `total` has the second smallest p value of `0.136` and a positive coefficient estimate, indicating that economic support from the club is indeed positively associated with club performance. 
+
+## Tactic Model
+
+After evaluating the full model with all the variables of interest, it seems that game tactics have the most significant effect on team performance. We decide that it would be interesting to create another linear regression model focusing only on variables representing tactic statistics and compare it with the full model above. 
+
+* Outcome: `general_goal_difference` represents team performance, which is goal scored minus goal conceded  
+
+* Predictor: `attack_posession` is the ball possession rate of the team  
+
+* Predictor: `attack_passes_back` is the number of short passes done during attack  
+
+
 ```{r include=TRUE}
 tactic_model = match_df |> 
-  lm(general_goal_difference ~ attack_posession + attack_pass_accuracy, data = _)|> 
+  lm(general_goal_difference ~ attack_posession + attack_passes_back, data = _)|> 
   broom::tidy() 
 knitr::kable(tactic_model, digits=3)
 ```
 
+Looking at the regression model results, `attack_possession` has an even smaller p value of **0.01**, indicating that that statistical correlation between it and the outcome is stronger in our tactic model. 
+
+# **Cross Validation**
+
+With one general full linear model and one tactic specific linear model, it would be interesting to compare `rmse` of the predicted `general_goal_difference` between the two by using cross validation. Below shows the result of `rmse` distribution of the two models.
+
 ```{r include=TRUE}
 cv_df = 
-  crossv_mc(match_df, 100)
-  
-cv_df =
-  cv_df |> 
+  crossv_mc(match_df, 100) |> 
   mutate(
     train = map(train, as_tibble),
     test = map(test, as_tibble))
@@ -141,13 +175,13 @@ cv_df =
 cv_df = 
   cv_df |> 
   mutate(
-    full_mod  = map(train, \(df) lm(general_goal_difference ~ general_squad_average_age + ave_age_proportion + europe_player_proportion
-     + attack_posession + attack_pass_accuracy + general_card_yellow + total, data = df )),
-    tactic_mod  = map(train, \(df)  lm(general_goal_difference ~ attack_posession + attack_pass_accuracy, data = df))
-   ) |> 
+    full_mod  = map(train, \(df) lm(general_goal_difference ~ general_squad_average_age + ave_age_proportion + 
+                      europe_player_proportion + attack_posession + attack_passes_back + 
+                      general_card_yellow + total, data = df)),
+    tactic_mod  = map(train, \(df)  lm(general_goal_difference ~ attack_posession + attack_passes_back, data = df)))|> 
   mutate(
-    rmse_general = map2_dbl(full_mod, test, \(mod, df) rmse(model = mod, data = df)),
-    rmse_poly = map2_dbl(tactic_mod, test, \(mod, df) rmse(model = mod, data = df)))
+    rmse_full_model = map2_dbl(full_mod, test, \(mod, df) rmse(model = mod, data = df)),
+    rmse_tactic_model = map2_dbl(tactic_mod, test, \(mod, df) rmse(model = mod, data = df)))
 
 cv_df |> 
   select(starts_with("rmse")) |> 

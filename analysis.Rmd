@@ -100,7 +100,7 @@ match_df = match_df  |>
 ```
 
 # **Player Distribution** 
-### Player Distribution by Region
+## Player Distribution by Region
 
 ```{r include=TRUE}
 player_dist |> 
@@ -113,7 +113,7 @@ player_dist |>
 
 The bar plot shows the distribution of Premier League football players origin, with categories of 5 regions of the world. From the plot, it can be observed that most of the players are from Europe. Since Premier League takes place in England, which is part of Europe, there might be an association between players origin and performance in the club. 
 
-### Player Distribution of 20 Teams
+## Player Distribution of 20 Teams
 
 ```{r include=TRUE}
 player_dist |>
@@ -176,6 +176,27 @@ pass_plot
 
 This plot compares the number of long passes to short passes for each team, with the size of each point representing the number of games won and the color gradient representing general goal difference. We can observe that teams that score more goals tend to have more short passes while teams that score less goals tend to have more long passes. Passing style greatly defines match tactic, with short pass indicating better ball control and cooperation among the team. We find it interesting to examine team tactics through match data. 
 
+## Fouls Received: Yellow Card Count
+
+```{r include=TRUE}
+match_df$team <- factor(match_df$team, levels = unique(match_df$team), 
+                           labels = c("Manchester City", "Liverpool", "Chelsea", "Tottenham", "Arsenal", "Manchester United",
+                                      "Wolverhampton", "Everton", "Leicester", "West Ham", "Watford", "Crystal Palace", 
+                                      "Newcastle", "Bournemouth", "Burnley", "Southampton", "Brighton", "Cardiff", "Fulham", 
+                                      "Huddersfield"))
+yellowcard_plot = plot_ly(match_df, 
+        x = ~ team, 
+        y = ~ general_card_yellow, 
+        type = "bar", 
+        color = ~ team,
+        colors = 'viridis') |>
+  layout(yaxis = list(title = 'Total Yellow Card Received'),
+         xaxis = list(title = 'Team'),
+         title = 'Total Yellow Card Received by Team')
+yellowcard_plot
+```
+
+Yellow card is given when certain types of foul happens between two players from opposite teams. Foul is used as a tactics during the match to stop the opposite from attacking and regain possession of the ball. The plot shows the total number of yellow card received by each team, ordered by the final league position. It can be observed that lower ranked teams tend to receive more yellow cards. One explanation is that conducting fouls is the tactic they use to take back ball control. Therefore, we are interested to see if there is an association between yellow cards received and team performance.
 
 # **Club Support: Total Spending** 
 
@@ -195,4 +216,4 @@ spending_plot
 ```
 
 
-This histogram shows the net total amount of money spent by the different teams on transfers from 2009 to 2019. We can observe that Manchester City, Liverpool and Arsenal are 3 teams with significant spending in the transfer market over the past decade. Comparing the net spending across the teams, ordered by final rank of the season, it can be seen that generally more spending leads to a better position in Premier League at the end. One outlier is Chelsea Football Club, who may have earned a considerable amount of money by selling players from U-17. 
+This histogram shows the net total amount of money spent by the different teams on transfers from 2009 to 2019. We can observe that Manchester City, Liverpool and Arsenal are 3 teams with significant spending in the transfer market over the past decade. Comparing the net spending across the teams, ordered by final rank of the season, it can be seen that generally more spending leads to a better position in Premier League at the end. One outlier is Chelsea Football Club, who may have earned a considerable amount of money by selling players from the Academy (raised by the club). 
