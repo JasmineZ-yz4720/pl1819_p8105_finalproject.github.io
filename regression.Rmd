@@ -159,11 +159,11 @@ tactic_model = match_df |>
 knitr::kable(tactic_model, digits=3)
 ```
 
-Looking at the regression model results, `attack_possession` has an even smaller p value of **0.01**, indicating that that statistical correlation between it and the outcome is stronger in our tactic model. 
+Looking at the regression model results, `attack_possession` has an even smaller p value of **0.01**, indicating that that statistical correlation between it and the outcome is stronger in our tactic model. The p value of `attack_passes_back` suggests that it is still not statistically significant, and the coefficient estimate indicates a very weak association. 
 
 # **Cross Validation**
 
-With one general full linear model and one tactic specific linear model, it would be interesting to compare `rmse` of the predicted `general_goal_difference` between the two by using cross validation. Below shows the result of `rmse` distribution of the two models.
+With one general full linear model and one tactic specific linear model, we are interested in assessing the performance of these two predictive models and to ensure that over-fitting is not an issue. Thus, we performed cross validation of our `full_model` and `tactic_model` and looked at the distribution of `rmse` to visualize model prediction accuracy.
 
 ```{r include=TRUE}
 cv_df = 
@@ -191,6 +191,18 @@ cv_df |>
     values_to = "rmse",
     names_prefix = "rmse_") |> 
   mutate(model = fct_inorder(model)) |> 
-  ggplot(aes(x = model, y = rmse)) + geom_violin()
+  ggplot(aes(x = model, y = rmse)) + geom_boxplot() +
+  geom_boxplot(color = c("#ADD8E6")) + 
+  labs(
+    title = "Root Mean Squared Errors Distributions for Match Performance", 
+    x = "Fitted Model", 
+    y = "RMSE") + 
+  theme(axis.line = element_line(color = "grey"), 
+        panel.background = element_blank(), 
+        legend.position = "none", 
+        panel.grid.major = element_line(color = "light grey", linetype = "dashed"),
+        plot.title = element_text(hjust = 0.5))
 ```
+
+Based on the boxplot shown above, we can observe that `rmse` is relatively lower in `tactic_model` and there is less variance in the distribution of `rmse`. In addition, outlier is more commonly when making prediction using `full_model`.
 

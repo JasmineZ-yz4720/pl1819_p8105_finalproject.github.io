@@ -9,16 +9,16 @@ output:
 
 ![](pics/pl_logo.jpeg){align="right" width=30%}
 
-# Premier League 
+# **Premier League** 
 
 As the most popular football league worldwide, the Premier League consists of 20 competitive football clubs in England and attracts some of the most talented football players. Each season lasts from August to June, with each team playing 38 matches against all other teams (home and away). Final standings is determined by points earned throughout the season, with 3 points for each win, 1 point for each draw, and 0 point for each loss.
 
-# Motivation 
+# **Motivation** 
 
 Statistical inference is commonly used as part of sporting analysis to help the clubs to achieve better game performance. Data scientists can use past data to build models and predict future performance.     
 For our final project, we focused on the Premier League season 2018/19 because it was the season before pandemic and data availability. We are interested in the factors with significant effect on the goal difference (number of goals scored minus goals conceded) for each team by the end of the season so that we might be able to predict team performance for future seasons. Factors including the player's average age, proportion of non-european players, possession rate, passing accuracy, number of yellow cards received, and money spent in the transfer window are being explored based on our data exploration process and existing scientific studies.  	
 
-# Related Work 
+# **Related Work** 
 
 As a high performance sports, thousands of scientific studies have been conducted to show the deciding effects of some variables on sport performance. 
 
@@ -28,7 +28,7 @@ Tactic can never be underestimated in a group sport. Since the 1996 European Cup
 
 As modern football develops, the role of financial supports gets much more important compared to the past. Football clubs can spend hundreds of millions of Euros to trade players during the transfer window. In this [study](https://scholarcommons.sc.edu/cgi/viewcontent.cgi?article=1518&context=senior_theses), the authors consider the impact of Financial Fair Play regulations and team ROI and focus on case studies of Manchester City, Chelsea, Leicester City and Newcastle United. 
 
-# Initial Questions
+# **Initial Questions**
 
 * What represents a club's success?
 

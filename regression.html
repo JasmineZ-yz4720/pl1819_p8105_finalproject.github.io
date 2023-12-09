@@ -550,16 +550,20 @@ knitr::kable(tactic_model, digits=3)</code></pre>
 <p>Looking at the regression model results,
 <code>attack_possession</code> has an even smaller p value of
 <strong>0.01</strong>, indicating that that statistical correlation
-between it and the outcome is stronger in our tactic model.</p>
+between it and the outcome is stronger in our tactic model. The p value
+of <code>attack_passes_back</code> suggests that it is still not
+statistically significant, and the coefficient estimate indicates a very
+weak association.</p>
 </div>
 </div>
 <div id="cross-validation" class="section level1">
 <h1><strong>Cross Validation</strong></h1>
 <p>With one general full linear model and one tactic specific linear
-model, it would be interesting to compare <code>rmse</code> of the
-predicted <code>general_goal_difference</code> between the two by using
-cross validation. Below shows the result of <code>rmse</code>
-distribution of the two models.</p>
+model, we are interested in assessing the performance of these two
+predictive models and to ensure that over-fitting is not an issue. Thus,
+we performed cross validation of our <code>full_model</code> and
+<code>tactic_model</code> and looked at the distribution of
+<code>rmse</code> to visualize model prediction accuracy.</p>
 <pre class="r"><code>cv_df = 
   crossv_mc(match_df, 100) |&gt; 
   mutate(
@@ -585,8 +589,23 @@ cv_df |&gt;
     values_to = &quot;rmse&quot;,
     names_prefix = &quot;rmse_&quot;) |&gt; 
   mutate(model = fct_inorder(model)) |&gt; 
-  ggplot(aes(x = model, y = rmse)) + geom_violin()</code></pre>
+  ggplot(aes(x = model, y = rmse)) + geom_boxplot() +
+  geom_boxplot(color = c(&quot;#ADD8E6&quot;)) + 
+  labs(
+    title = &quot;Root Mean Squared Errors Distributions for Match Performance&quot;, 
+    x = &quot;Fitted Model&quot;, 
+    y = &quot;RMSE&quot;) + 
+  theme(axis.line = element_line(color = &quot;grey&quot;), 
+        panel.background = element_blank(), 
+        legend.position = &quot;none&quot;, 
+        panel.grid.major = element_line(color = &quot;light grey&quot;, linetype = &quot;dashed&quot;),
+        plot.title = element_text(hjust = 0.5))</code></pre>
 <p><img src="regression_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<p>Based on the boxplot shown above, we can observe that
+<code>rmse</code> is relatively lower in <code>tactic_model</code> and
+there is less variance in the distribution of <code>rmse</code>. In
+addition, outlier is more commonly when making prediction using
+<code>full_model</code>.</p>
 </div>
 
 
