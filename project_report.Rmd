@@ -407,7 +407,35 @@ cv_df |>
     values_to = "rmse",
     names_prefix = "rmse_") |> 
   mutate(model = fct_inorder(model)) |> 
-  ggplot(aes(x = model, y = rmse)) + geom_violin()
+  ggplot(aes(x = model, y = rmse)) + geom_boxplot() +
+  geom_boxplot(color = c("#ADD8E6")) + 
+  labs(
+    title = "Root Mean Squared Errors Distributions for Match Performance", 
+    x = "Fitted Model", 
+    y = "RMSE") + 
+  theme(axis.line = element_line(color = "grey"), 
+        panel.background = element_blank(), 
+        legend.position = "none", 
+        panel.grid.major = element_line(color = "light grey", linetype = "dashed"),
+        plot.title = element_text(hjust = 0.5))
 ```
 
-# Discussion
+# **Discussion**
+
+Inspired by our passion in football, we aimed to conduct a performance analysis to find out factors significantly impacting game results. We are particularly interested in Premier League, which is now the most competitive and most advertised football league in the world. We started off by finding existing scientific studies about our research interest. We found that age of the players, tactical approach and financial spending are proven to have an effect on match result. Thus, these three factors are included as variables of exploration. To make further explorations, we downloaded and read in datasets on Premier League Season 2018-19, including statistics on match, player, and club spending. 
+
+Premier League has policy regarding the limit of non-European players and we found that indeed most players have an European nationality so that we expect European players are more skillful or talented in football compared to others. Besides players, tactics and strategies are the most important in team sports. Scatterplots were created to visualize how ball possession rate, types of ball passes on the pitch, and strategic fouls vary between the teams. We found that higher ranked teams generally have higher possession rate, more short passes compared to long passes, and less yellow cards resulting from fouls. Moreover, football is the sport that generates the most profit and market value of talented players can be hundreds of millions dollars. Financial support from the club is decisive during transfer window, allowing the club to invest and buy players to strengthen the team. In fact, we found that higher ranked teams tend to have a higher net spending over the past decade in transfer market. 
+
+With all the exploratory analysis conducted, we hypothesized that average age of the squad, nationality of the squad, tactic approach, total yellow cards received from fouls, and money spent during transfer window are associated with performance outcome measured by goal difference by the end of the season. 
+
+## Regression Results
+
+To test our hypothesis, we fitted a full linear model regressing `general_goal_difference` on 7 predictors. Results of the full linear model revealed a significant relationship between `attack_possession` and the outcome, as indicated by a p value below 0.05. Other predictors, however, did not demonstrate statistical significance at significance level of 0.05. Thus, we can observe that tactical approach has much stronger impact compared to other factors. We then fitted a simplified linear model regressing `general_goal_difference` only on factors related to tactics. We found that the tactic model also highlighted attack possession as a significant factor. However, types of passes did not show significance in this model. 
+
+Using cross validation, we assessed prediction accuracy of the prediction models by looking at the boxplots of `rmse` distribution. We found that tactic model generally has a lower `rmse` compared to the full model. The results show that the tactic model potentially provides a more accurate and consistent prediction for `general_goal_difference`, as the `attack_possession` emerged as a pivotal predictor in both models, aligning with our prediction that match style with primary focus on ball possession is a key factor in match outcomes.
+
+Even though our model only shows `attack_possession` as a significant factor, we definitely acknowledge the importance of other factors that may failed to be represented in our model. For example, differences between individual players and even off-field factors can cause considerable disparities. This could involve integrating interaction terms or additional predictors to more accurately reflect the complexities inherent in football club performance. More complicated model is needed to conduct a more detailed analysis.
+
+## Challenges 
+
+When we analyze Premier League data, some of the challenges tend to revolve around data availability, merging data from different sources, and encountering unexpected models and results. Data availability can be a big issue, especially when we are looking for specific, detailed statistics or historical data, as not all the desired information is publicly available or consistently recorded. Merging data is a key step in a comprehensive analysis, but it also introduces complications such as adjusting for different formats and scales using different data sources. This time-consuming process often reveals discrepancies that must be carefully resolved to ensure the completeness of the data. In Moreover, the initial model created for analysis may produce unexpected or counterintuitive results. These results can stem from a variety of factors such as data quality issues, poor model selection, omission of variables, or misinterpretation of complex dynamics in sports data. Each of these challenges requires careful consideration and an R approach to ensure the reliability and validity of the analysis.
