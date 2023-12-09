@@ -38,7 +38,8 @@ output:
 <br>
 
 
-### Collaborators
+### **Collaborators**
+
 * Jasmine Zhang (yz4720) 
 
 * Yuxin Zhang (yz4719) 
